@@ -10,8 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  camera: ^0.11.2
+  camera: ^0.11.2 # 카메라 사용
   cupertino_icons: ^1.0.8
+  google_generative_ai: ^0.4.6 # 푸드스캐너 AI
+  flutter_dotenv: ^5.1.0 # 환경설정
+  image_picker: ^1.1.2 # 갤러리
 
 dev_dependencies:
   flutter_test:
@@ -21,3 +24,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - .env
+

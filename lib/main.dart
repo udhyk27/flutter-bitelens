@@ -1,10 +1,14 @@
 import 'package:bitelens/result_screen.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:image_picker/image_picker.dart';
 
 late List<CameraDescription> _cameras;
 
 Future<void> main() async {
+  await dotenv.load(fileName: ".env");
+
   WidgetsFlutterBinding.ensureInitialized();
   _cameras = await availableCameras();
   runApp(const MyApp());
@@ -121,28 +125,70 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 40),
-                child: GestureDetector(
-                  onTap: _takePicture,
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
-                      color: Colors.white.withValues(alpha: 0.3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 갤러리 버튼
+                    GestureDetector(
+                      onTap: _pickFromGallery,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        margin: const EdgeInsets.only(right: 24),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        child: const Icon(
+                          Icons.photo_library,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: 36,
+                    // 촬영 버튼 (기존)
+                    GestureDetector(
+                      onTap: _takePicture,
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 4),
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
           ],
         )
             : const Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+
+  Future<void> _pickFromGallery() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    print('gallery image');
+
+    if (image == null) return;
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ResultScreen(imagePath: image.path),
       ),
     );
   }
