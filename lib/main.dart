@@ -1,5 +1,6 @@
 import 'package:bitelens/screens/result_screen.dart';
 import 'package:bitelens/screens/settings_screen.dart';
+import 'package:bitelens/services/api.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +15,8 @@ Future<void> main() async {
   await dotenv.load(fileName: ".env");
   WidgetsFlutterBinding.ensureInitialized();
   _cameras = await availableCameras();
+  Api().getRemoteConfig();
+
   runApp(const MyApp());
 }
 
@@ -64,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    controller = CameraController(_cameras[0], ResolutionPreset.max);
+    controller = CameraController(_cameras[0], ResolutionPreset.max, enableAudio: false,);
     controller.initialize().then((_) {
       if (!mounted) return;
       setState(() => _isInitialized = true);
@@ -189,6 +192,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         // 빈 공간 (대칭)
                         const SizedBox(width: 56),
                       ],
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      '분석 결과는 참고용입니다',
+                      style: TextStyle(
+                        color: Colors.white24,
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ],
                 ),

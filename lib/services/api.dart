@@ -1,4 +1,5 @@
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/cupertino.dart';
 
 class Api {
 
@@ -31,12 +32,12 @@ class Api {
       appVersion = rc.getString('app_version_aos');
       storeUrl = rc.getString('store_aos');
 
-      print('appVersion: $appVersion');
-      print('storeUrl: $storeUrl');
+      debugPrint('appVersion: $appVersion');
+      debugPrint('storeUrl: $storeUrl');
 
       // print("REMOTE CONFIG 로드 완료: ${onBoardText.keys}");
     } catch (e) {
-      print('REMOTE CONFIG ERROR: $e');
+      debugPrint('REMOTE CONFIG ERROR: $e');
     }
   }
 }

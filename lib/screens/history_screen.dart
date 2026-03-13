@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bitelens/services/database_helper.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -55,7 +56,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
     for (final line in lines) {
       if (line.contains('칼로리')) {
         final parts = line.split(':');
-        if (parts.length > 1) return parts[1].trim();
+        if (parts.length > 1) {
+          String calories = parts[1].trim();
+
+          // 괄호 이후 제거 (예: "550kcal (1인분 기준)" → "550kcal")
+          if (calories.contains('(')) {
+            calories = calories.substring(0, calories.indexOf('(')).trim();
+          }
+
+          // 너무 길면 잘라내기 (혹시 모를 예외 처리)
+          if (calories.length > 15) {
+            calories = '${calories.substring(0, 15)}...';
+          }
+
+          return calories;
+        }
       }
     }
     return '-';
@@ -191,74 +206,105 @@ class _HistoryCard extends StatelessWidget {
     required this.onDelete,
   });
 
+  Future<void> _shareResult() async {
+    try {
+      await Share.shareXFiles(
+        [XFile(imagePath)],
+        text: result,
+        subject: 'BiteLens 음식 분석 결과',
+      );
+    } catch (e) {
+      debugPrint('공유 오류: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => _showDetailSheet(context),
       child: Container(
+        height: 90,
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: const Color(0xFF111111),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withOpacity(0.06), width: 1),
         ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch, // ← 추가
-            children: [
-              // 썸네일
-              ClipRRect(
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+        child: Row(
+          children: [
+            // 썸네일 고정 크기
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              child: SizedBox(
+                width: 90,
+                height: 90,
                 child: File(imagePath).existsSync()
                     ? Image.file(
                   File(imagePath),
-                  width: 90,
-                  // height: 90 ← 이거 제거
                   fit: BoxFit.cover,
                 )
                     : Container(
-                  width: 90,
-                  // height: 90 ← 이거 제거
                   color: const Color(0xFF1E1E1E),
                   child: const Icon(Icons.image_not_supported,
                       color: Colors.white12, size: 28),
                 ),
               ),
+            ),
 
-              // 내용
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min, // ← 추가
-                    children: [
-                      Text(
-                        foodName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        // maxLines: 1 ← 제거
-                        // overflow: TextOverflow.ellipsis ← 제거
+            // 내용
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      foodName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
-                      // ... 나머지 동일
-                    ],
-                  ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        calories,
+                        style: const TextStyle(
+                          color: Colors.deepOrange,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      date,
+                      style: const TextStyle(
+                        color: Colors.white24,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
 
-              // 삭제 버튼
-              Align(
-                alignment: Alignment.topCenter, // ← 삭제버튼 상단 고정
-                child: IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, color: Colors.white12, size: 20),
-                ),
-              ),
-            ],
-          ),
+            // 삭제 버튼
+            IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline, color: Colors.white12, size: 20),
+            ),
+          ],
         ),
       ),
     );
@@ -280,13 +326,39 @@ class _HistoryCard extends StatelessWidget {
         builder: (context, scrollController) => Column(
           children: [
             // 핸들
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 20),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white12,
-                borderRadius: BorderRadius.circular(2),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.ios_share, color: Colors.white54, size: 20),
+                        onPressed: () async {
+                          try {
+                            await Share.shareXFiles(
+                              [XFile(imagePath)],
+                              text: result, // 분석 결과 텍스트도 같이 공유
+                              subject: 'BiteLens 음식 분석 결과',
+                            );
+                          } catch (e) {
+                            debugPrint('공유 오류: $e');
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
