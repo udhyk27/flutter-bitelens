@@ -55,7 +55,7 @@ class _ResultScreenState extends State<ResultScreen>
   Future<void> _analyzeFood() async {
     try {
       final model = GenerativeModel(
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash-lite',
         apiKey: dotenv.env['GEMINI_API_KEY']!,
       );
 
@@ -86,6 +86,7 @@ class _ResultScreenState extends State<ResultScreen>
       _scanController.stop();
       _fadeController.forward();
     } catch (e) {
+      print('오류 발생: $e');
       setState(() {
         _result = '오류 발생: $e';
         _isLoading = false;

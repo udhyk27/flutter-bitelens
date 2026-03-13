@@ -16,6 +16,20 @@ dependencies:
   flutter_dotenv: ^5.1.0 # 환경설정
   image_picker: ^1.1.2 # 갤러리
 
+  # Firebase Core
+  firebase_core: ^3.10.1
+
+  # Firebase Remote Config
+  firebase_remote_config: ^5.5.0
+
+  # Firestore
+  cloud_firestore: ^5.6.2
+
+  # Firebase Authentication
+  firebase_auth: ^5.4.1
+  firebase_auth_web: ^5.13.7
+  firebase_analytics: ^11.4.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
