@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../services/database_helper.dart';
 
@@ -125,6 +126,14 @@ class _ResultScreenState extends State<ResultScreen>
           ),
         ),
         centerTitle: true,
+        actions: [
+          // 로딩 끝났을 때만 공유 버튼 표시
+          if (!_isLoading)
+            IconButton(
+              icon: const Icon(Icons.ios_share, color: Colors.white, size: 20),
+              onPressed: _shareResult,
+            ),
+        ],
       ),
 
       body: Column(
@@ -317,6 +326,34 @@ class _ResultScreenState extends State<ResultScreen>
                         ),
                       ),
                     ),
+
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.03),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline, color: Colors.white24, size: 14),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.',
+                              style: TextStyle(
+                                color: Colors.white24,
+                                fontSize: 11,
+                                height: 1.6,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -358,6 +395,20 @@ class _ResultScreenState extends State<ResultScreen>
       ),
     );
   }
+
+  /// share
+  Future<void> _shareResult() async {
+    try {
+      // 텍스트 + 이미지 함께 공유
+      await Share.shareXFiles(
+        [XFile(widget.imagePath)],
+        text: _result,
+        subject: 'BiteLens 음식 분석 결과',
+      );
+    } catch (e) {
+      debugPrint('공유 오류: $e');
+    }
+  }
 }
 
 // 스캔 프레임 페인터
@@ -397,3 +448,4 @@ class _FramePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+

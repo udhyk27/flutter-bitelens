@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -153,13 +154,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _ActionItem(
                   icon: Icons.description_outlined,
                   title: '개인정보 처리방침',
-                  onTap: () {},
+                  onTap: () async {
+                    final url = Uri.parse('https://udhyk27-ops.github.io');
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  },
                 ),
                 _Divider(),
                 _ActionItem(
                   icon: Icons.info_outline,
                   title: '오픈소스 라이선스',
-                  onTap: () {},
+                  onTap: () {
+                    showLicensePage(
+                      context: context,
+                      applicationName: 'BiteLens',
+                      applicationVersion: '1.0.0',
+                    );
+                  },
                 ),
               ],
             ),
