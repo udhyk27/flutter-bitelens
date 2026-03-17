@@ -62,4 +62,10 @@ class DatabaseHelper {
     final db = await database;
     await db.delete('analysis_history', where: 'id = ?', whereArgs: [id]);
   }
+
+  // 전체 삭제
+  Future<void> clearAll() async {
+    final db = await database;
+    await db.delete('analysis_history');
+  }
 }

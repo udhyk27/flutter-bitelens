@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/database_helper.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -228,8 +230,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('취소', style: TextStyle(color: Colors.white38)),
           ),
           TextButton(
-            onPressed: () {
-              // TODO: DatabaseHelper.instance.clearAll() 연결
+            onPressed: () async {
+              await DatabaseHelper.instance.clearAll();
               Navigator.pop(context);
             },
             child: Text('삭제', style: TextStyle(color: Colors.red.shade300)),
