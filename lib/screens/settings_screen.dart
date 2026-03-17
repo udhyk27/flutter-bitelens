@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -9,9 +10,31 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _saveHistory = true;
-  bool _highQualityImage = false;
+  bool _saveHistory = true; // 분석 기록 저장
+  bool _detailedAnalysis = false; // 상세 분석
   String _selectedLanguage = '한국어';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  // 불러오기
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _saveHistory = prefs.getBool('save_history') ?? true;
+      _detailedAnalysis = prefs.getBool('detailed_analysis') ?? false;
+    });
+  }
+
+  // 저장
+  Future<void> _saveSetting(String key, bool val) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, val);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -97,15 +120,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: '분석 기록 저장',
                   subtitle: '분석 결과를 기기에 저장합니다',
                   value: _saveHistory,
-                  onChanged: (val) => setState(() => _saveHistory = val),
+                  onChanged: (val) async {
+                    setState(() => _saveHistory = val);
+                    await _saveSetting('saved_history', val); // 기기 저장
+                  },
                 ),
                 _Divider(),
                 _ToggleItem(
                   icon: Icons.hd_outlined,
-                  title: '고화질 이미지',
-                  subtitle: '분석 정확도 향상 (속도 느려짐)',
-                  value: _highQualityImage,
-                  onChanged: (val) => setState(() => _highQualityImage = val),
+                  title: '상세분석',
+                  subtitle: '응답이 느려질 수 있습니다',
+                  value: _detailedAnalysis,
+                  onChanged: (val) async {
+                    setState(() => _detailedAnalysis = val);
+                    await _saveSetting('detailed_analysis', val); // 저장
+                  },
                 ),
               ],
             ),

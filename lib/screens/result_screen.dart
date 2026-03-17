@@ -1,8 +1,12 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image/image.dart' as img;
+import 'dart:typed_data';
 
 import '../services/database_helper.dart';
 
@@ -56,26 +60,52 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   Future<void> _analyzeFood() async {
+
+    final prefs = await SharedPreferences.getInstance();
+    final saveHistory = prefs.getBool('save_history') ?? true;
+    final detailedAnalysis = prefs.getBool('detailed_analysis') ?? false;
+
     try {
       final model = GenerativeModel(
         model: 'gemini-2.5-flash-lite',
         apiKey: dotenv.env['GEMINI_API_KEY']!,
       );
 
-      final imageBytes = await File(widget.imagePath).readAsBytes();
+      final rawBytes = await File(widget.imagePath).readAsBytes();
+
+      // JPEG 시그니처 확인 (FF D8 FF)
+      final isJpeg = rawBytes[0] == 0xFF && rawBytes[1] == 0xD8 && rawBytes[2] == 0xFF;
+
+      final imageBytes = isJpeg
+          ? rawBytes // JPEG면 그대로 사용
+          : await compute(_convertToJpeg, rawBytes); // 아닐 때만 변환
+
       final prompt = [
         Content.multi([
           DataPart('image/jpeg', imageBytes),
-          TextPart('''
-            이 음식 사진을 분석해줘. 다음 형식으로 답해줘:
-            
-            음식 이름: 
-            예상 칼로리: 
-            주요 영양소:
-            - 탄수화물:
-            - 단백질:
-            - 지방:
-          '''),
+          TextPart(!detailedAnalysis
+            ? '''
+                이 음식 사진을 분석해줘. 다음 형식으로 답해줘:
+                음식 이름: 
+                예상 칼로리: 
+                주요 영양소:
+                - 탄수화물:
+                - 단백질:
+                - 지방:
+              '''
+            : '''
+                이 음식 사진을 최대한 정밀하게 분석해줘.
+                음식 이름:
+                예상 칼로리:
+                주요 영양소:
+                - 탄수화물:
+                - 단백질:
+                - 지방:
+                - 나트륨:
+                - 식이섬유:
+                추가 정보: 재료, 조리법, 혈당지수(GI) 등 상세하게
+              '''
+          ),
         ])
       ];
 
@@ -89,10 +119,12 @@ class _ResultScreenState extends State<ResultScreen>
       _scanController.stop();
       _fadeController.forward();
 
-      await DatabaseHelper.instance.insertAnalysis( /// 결과 저장
-        imagePath: widget.imagePath,
-        result: _result,
-      );
+      if (saveHistory) {
+        await DatabaseHelper.instance.insertAnalysis( // 결과 저장
+          imagePath: widget.imagePath,
+          result: _result,
+        );
+      }
     } catch (e) {
       print('오류 발생: $e');
       setState(() {
@@ -449,3 +481,8 @@ class _FramePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+Uint8List _convertToJpeg(Uint8List bytes) {
+  final decoded = img.decodeImage(bytes)!;
+  final jpeg = img.JpegEncoder().encode(decoded);
+  return Uint8List.fromList(jpeg);
+}

@@ -19,6 +19,8 @@ dependencies:
   path: ^1.9.0
   share_plus: ^10.0.0 # 공유
   url_launcher: ^6.3.0
+  shared_preferences: ^2.3.0
+  image: ^4.1.0
 
   # Firebase Core
   firebase_core: ^3.10.1
