@@ -195,7 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => const WebViewScreen(
-                          url: 'https://udhyk27-ops.github.io',
+                          url: 'https://udhyk27-ops.github.io/bitelens',
                           title: '개인정보 처리방침',
                         ),
                       ),
