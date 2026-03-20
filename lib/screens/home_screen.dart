@@ -1,3 +1,4 @@
+import 'package:bitelens/screens/profile_screen.dart';
 import 'package:bitelens/screens/result_screen.dart';
 import 'package:bitelens/screens/settings_screen.dart';
 import 'package:camera/camera.dart';
@@ -224,15 +225,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            _DrawerItem(icon: Icons.home_outlined, label: '홈', onTap: () => Navigator.pop(context)),
+            _DrawerItem(
+              icon: Icons.home_outlined,
+              label: '홈',
+              onTap: () => Navigator.pop(context),
+            ),
             _DrawerItem(
               icon: Icons.history_outlined,
               label: '분석 기록',
               onTap: () {
-                Navigator.pop(context); // 드로어 닫기
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                );
+              },
+            ),
+            // ── 추가: 내 프로필 ──
+            _DrawerItem(
+              icon: Icons.person_outline,
+              label: '내 프로필',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
                 );
               },
             ),

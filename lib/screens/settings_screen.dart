@@ -41,182 +41,201 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'SETTINGS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 6,
+    return SafeArea(
+      top: false,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
           ),
+          title: const Text(
+            'SETTINGS',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 6,
+            ),
+          ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-            // 앱 정보 카드
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF111111),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.06)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.deepOrange,
-                      borderRadius: BorderRadius.circular(14),
+              // 앱 정보 카드
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111111),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.restaurant, color: Colors.white, size: 24),
                     ),
-                    child: const Icon(Icons.restaurant, color: Colors.white, size: 24),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'BITE LENS',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 3,
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'BITE LENS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 3,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Version ${Api().appVersion}',
-                        style: TextStyle(color: Colors.white30, fontSize: 12),
-                      ),
-                    ],
+                        SizedBox(height: 4),
+                        Text(
+                          'Version ${Api().appVersion}',
+                          style: TextStyle(color: Colors.white30, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // 분석 설정
+              _SectionHeader(title: '분석 설정'),
+              const SizedBox(height: 12),
+              _SettingsCard(
+                children: [
+                  _ToggleItem(
+                    icon: Icons.history_outlined,
+                    title: '분석 기록 저장',
+                    subtitle: '분석 결과를 기기에 저장합니다',
+                    value: _saveHistory,
+                    onChanged: (val) async {
+                      setState(() => _saveHistory = val);
+                      await _saveSetting('save_history', val); // 기기 저장
+                    },
+                  ),
+                  _Divider(),
+                  _ToggleItem(
+                    icon: Icons.hd_outlined,
+                    title: '상세분석',
+                    subtitle: '응답이 느려질 수 있습니다',
+                    value: _detailedAnalysis,
+                    onChanged: (val) async {
+                      setState(() => _detailedAnalysis = val);
+                      await _saveSetting('detailed_analysis', val); // 저장
+                    },
                   ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
-            // 분석 설정
-            _SectionHeader(title: '분석 설정'),
-            const SizedBox(height: 12),
-            _SettingsCard(
-              children: [
-                _ToggleItem(
-                  icon: Icons.history_outlined,
-                  title: '분석 기록 저장',
-                  subtitle: '분석 결과를 기기에 저장합니다',
-                  value: _saveHistory,
-                  onChanged: (val) async {
-                    setState(() => _saveHistory = val);
-                    await _saveSetting('save_history', val); // 기기 저장
-                  },
-                ),
-                _Divider(),
-                _ToggleItem(
-                  icon: Icons.hd_outlined,
-                  title: '상세분석',
-                  subtitle: '응답이 느려질 수 있습니다',
-                  value: _detailedAnalysis,
-                  onChanged: (val) async {
-                    setState(() => _detailedAnalysis = val);
-                    await _saveSetting('detailed_analysis', val); // 저장
-                  },
-                ),
-              ],
-            ),
+              // 언어 설정
+              _SectionHeader(title: '언어'),
+              const SizedBox(height: 12),
+              _SettingsCard(
+                children: [
+                  _SelectItem(
+                    icon: Icons.language_outlined,
+                    title: '응답 언어',
+                    value: _selectedLanguage,
+                    options: ['한국어', 'English', '日本語'],
+                    onChanged: (val) async {
+                      setState(() => _selectedLanguage = val);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setString('response_language', val);
+                    },
+                  ),
+                ],
+              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // 언어 설정
-            _SectionHeader(title: '언어'),
-            const SizedBox(height: 12),
-            _SettingsCard(
-              children: [
-                _SelectItem(
-                  icon: Icons.language_outlined,
-                  title: '응답 언어',
-                  value: _selectedLanguage,
-                  options: ['한국어', 'English', '日本語'],
-                  onChanged: (val) async {
-                    setState(() => _selectedLanguage = val);
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setString('response_language', val);
-                  },
-                ),
-              ],
-            ),
+              // 데이터
+              _SectionHeader(title: '데이터'),
+              const SizedBox(height: 12),
+              _SettingsCard(
+                children: [
+                  _ActionItem(
+                    icon: Icons.delete_sweep_outlined,
+                    title: '분석 기록 전체 삭제',
+                    titleColor: Colors.red.shade300,
+                    iconColor: Colors.red.shade300,
+                    onTap: () => _showClearHistoryDialog(),
+                  ),
+                ],
+              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // 데이터
-            _SectionHeader(title: '데이터'),
-            const SizedBox(height: 12),
-            _SettingsCard(
-              children: [
-                _ActionItem(
-                  icon: Icons.delete_sweep_outlined,
-                  title: '분석 기록 전체 삭제',
-                  titleColor: Colors.red.shade300,
-                  iconColor: Colors.red.shade300,
-                  onTap: () => _showClearHistoryDialog(),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // 앱 정보
-            _SectionHeader(title: '앱 정보'),
-            const SizedBox(height: 12),
-            _SettingsCard(
-              children: [
-                _ActionItem(
-                  icon: Icons.description_outlined,
-                  title: '개인정보 처리방침',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => WebViewScreen(
-                          url: Api().privacyUrl,
-                          title: '개인정보 처리방침',
+              // 앱 정보
+              _SectionHeader(title: '앱 정보'),
+              const SizedBox(height: 12),
+              _SettingsCard(
+                children: [
+                  _ActionItem(
+                    icon: Icons.description_outlined,
+                    title: '개인정보 처리방침',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => WebViewScreen(
+                            url: Api().privacyUrl,
+                            title: '개인정보 처리방침',
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-                _Divider(),
-                _ActionItem(
-                  icon: Icons.info_outline,
-                  title: '오픈소스 라이선스',
-                  onTap: () {
-                    showLicensePage(
-                      context: context,
-                      applicationName: 'BiteLens',
-                      applicationVersion: '1.0.0',
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
+                      );
+                    },
+                  ),
+                  _Divider(),
+                  _ActionItem(
+                    icon: Icons.policy_outlined,
+                    title: '이용약관',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => WebViewScreen(
+                            url: Api().termsUrl,
+                            title: '이용약관',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  _Divider(),
+                  _ActionItem(
+                    icon: Icons.info_outline,
+                    title: '오픈소스 라이선스',
+                    onTap: () {
+                      showLicensePage(
+                        context: context,
+                        applicationName: 'BiteLens',
+                        applicationVersion: Api().appVersion,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
