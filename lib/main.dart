@@ -1,10 +1,12 @@
 import 'package:bitelens/screens/home_screen.dart';
+import 'package:bitelens/screens/onboarding_screen.dart';
 import 'package:bitelens/services/api_service.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants/svg_constant.dart';
 
@@ -58,15 +60,21 @@ class _AnimatedSplashState extends State<AnimatedSplash> {
     try {
       await Future.delayed(const Duration(milliseconds: 2500));
 
+      final prefs = await SharedPreferences.getInstance();
+      final onboardingDone = prefs.getBool('onboarding_done') ?? false;
+
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => HomeScreen(cameras: _cameras),
+          builder: (_) => onboardingDone
+              ? HomeScreen(cameras: _cameras)
+              : OnboardingScreen(cameras: _cameras),
         ),
       );
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint("초기화 에러: $e");
+      debugPrint("스택: $stack");
     }
   }
 

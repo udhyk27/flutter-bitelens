@@ -315,6 +315,10 @@ class _ResultScreenState extends State<ResultScreen>
                     ),
 
                     const SizedBox(height: 12),
+                    // ─── 영양소 시각화 카드 ────────────────────
+                    _NutritionCard(result: _result),
+
+
 
                     // ─── TDEE 기준선 배너 ──────────────────────
                     if (_tdee != null)
@@ -573,4 +577,143 @@ Uint8List _convertToJpeg(Uint8List bytes) {
   final decoded = img.decodeImage(bytes)!;
   final jpeg = img.JpegEncoder().encode(decoded);
   return Uint8List.fromList(jpeg);
+}
+
+// ─── 영양소 시각화 카드 (result_screen 전용) ──────────────────────────
+
+class _NutritionCard extends StatelessWidget {
+  final String result;
+  const _NutritionCard({required this.result});
+
+  String? _parse(String key) {
+    for (final line in result.split('\n')) {
+      if (line.contains(key)) {
+        final parts = line.split(':');
+        if (parts.length > 1) {
+          String val = parts[1].trim();
+          if (val.contains('(')) val = val.substring(0, val.indexOf('(')).trim();
+          return val.isEmpty ? null : val;
+        }
+      }
+    }
+    return null;
+  }
+
+  double? _parseG(String key) {
+    final raw = _parse(key);
+    if (raw == null) return null;
+    final m = RegExp(r'([\d.]+)').firstMatch(raw);
+    return m != null ? double.tryParse(m.group(1)!) : null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final carbsStr = _parse('탄수화물') ?? '-';
+    final proteinStr = _parse('단백질') ?? '-';
+    final fatStr = _parse('지방') ?? '-';
+    final sodiumStr = _parse('나트륨');
+    final fiberStr = _parse('식이섬유');
+
+    final carbs = _parseG('탄수화물') ?? 0;
+    final protein = _parseG('단백질') ?? 0;
+    final fat = _parseG('지방') ?? 0;
+    final total = carbs + protein + fat;
+
+    // 파싱된 값이 없으면 카드 숨김
+    if (carbsStr == '-' && proteinStr == '-' && fatStr == '-') return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.07)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('영양소', style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
+          const SizedBox(height: 14),
+
+          // 비율 바
+          if (total > 0) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: SizedBox(
+                height: 6,
+                child: LayoutBuilder(builder: (context, constraints) {
+                  final w = constraints.maxWidth;
+                  return Row(children: [
+                    Container(width: total > 0 ? carbs / total * w : 0, color: Colors.blue.shade300),
+                    Container(width: total > 0 ? protein / total * w : 0, color: Colors.green.shade400),
+                    Container(width: total > 0 ? fat / total * w : 0, color: Colors.orange.shade300),
+                  ]);
+                }),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(children: [
+              _Legend(color: Colors.blue.shade300, label: '탄 ${(carbs/total*100).toStringAsFixed(0)}%'),
+              const SizedBox(width: 12),
+              _Legend(color: Colors.green.shade400, label: '단 ${(protein/total*100).toStringAsFixed(0)}%'),
+              const SizedBox(width: 12),
+              _Legend(color: Colors.orange.shade300, label: '지 ${(fat/total*100).toStringAsFixed(0)}%'),
+            ]),
+            const SizedBox(height: 14),
+          ],
+
+          // 영양소 수치
+          Row(children: [
+            Expanded(child: _MacroCol(label: '탄수화물', value: carbsStr, color: Colors.blue.shade300)),
+            Expanded(child: _MacroCol(label: '단백질', value: proteinStr, color: Colors.green.shade400)),
+            Expanded(child: _MacroCol(label: '지방', value: fatStr, color: Colors.orange.shade300)),
+          ]),
+
+          if (sodiumStr != null || fiberStr != null) ...[
+            const SizedBox(height: 12),
+            Container(height: 0.5, color: Colors.white.withOpacity(0.06)),
+            const SizedBox(height: 12),
+            Row(children: [
+              if (sodiumStr != null)
+                Expanded(child: _MacroCol(label: '나트륨', value: sodiumStr, color: Colors.yellow.shade600)),
+              if (fiberStr != null)
+                Expanded(child: _MacroCol(label: '식이섬유', value: fiberStr, color: Colors.teal.shade300)),
+            ]),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _Legend({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      const SizedBox(width: 4),
+      Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+    ],
+  );
+}
+
+class _MacroCol extends StatelessWidget {
+  final String label, value;
+  final Color color;
+  const _MacroCol({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: const TextStyle(color: Colors.white30, fontSize: 10, letterSpacing: 0.5)),
+      const SizedBox(height: 4),
+      Text(value, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600)),
+    ],
+  );
 }
