@@ -117,7 +117,7 @@ class _ResultScreenState extends State<ResultScreen>
     } catch (e) {
       print('오류 발생: $e');
       setState(() {
-        _result = '오류 발생: $e';
+        _result = '오류가 발생했습니다.';
         _isLoading = false;
       });
       _scanController.stop();
