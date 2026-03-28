@@ -323,11 +323,11 @@ class _HistoryCard extends StatelessWidget {
                     // 영양소 미니 태그
                     Row(
                       children: [
-                        _NutriBadge(label: '탄', value: carbs, color: Colors.blue.shade300),
+                        Flexible(child: _NutriBadge(label: '탄', value: carbs, color: Colors.blue.shade300)),
                         const SizedBox(width: 6),
-                        _NutriBadge(label: '단', value: protein, color: Colors.green.shade400),
+                        Flexible(child: _NutriBadge(label: '단', value: protein, color: Colors.green.shade400)),
                         const SizedBox(width: 6),
-                        _NutriBadge(label: '지', value: fat, color: Colors.orange.shade300),
+                        Flexible(child: _NutriBadge(label: '지', value: fat, color: Colors.orange.shade300)),
                       ],
                     ),
                   ],
@@ -417,7 +417,7 @@ class _HistoryCard extends StatelessWidget {
                           decoration: BoxDecoration(color: Colors.deepOrange, borderRadius: BorderRadius.circular(2))),
                       const SizedBox(width: 10),
                       const Text('분석 결과',
-                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1)),
                     ]),
                     const SizedBox(height: 12),
 
@@ -473,9 +473,13 @@ class _NutritionCard extends StatelessWidget {
             children: [
               const Icon(Icons.local_fire_department_outlined, color: Colors.deepOrange, size: 18),
               const SizedBox(width: 6),
-              Text(
-                NutritionParser.calories(result),
-                style: const TextStyle(color: Colors.deepOrange, fontSize: 22, fontWeight: FontWeight.w700, height: 1),
+              Flexible(
+                child: Text(
+                  NutritionParser.calories(result),
+                  style: const TextStyle(color: Colors.deepOrange, fontSize: 22, fontWeight: FontWeight.w700, height: 1),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -599,18 +603,26 @@ class _NutriBadge extends StatelessWidget {
   const _NutriBadge({required this.label, required this.value, required this.color});
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 14, height: 14,
-        decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
-        child: Center(child: Text(label, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w700))),
-      ),
-      const SizedBox(width: 3),
-      Text(value == '-' ? '-' : value,
-          style: const TextStyle(color: Colors.white38, fontSize: 10),
-          maxLines: 1, overflow: TextOverflow.ellipsis),
-    ],
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 70),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14, height: 14,
+          decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+          child: Center(child: Text(label, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w700))),
+        ),
+        const SizedBox(width: 3),
+        Flexible(
+          child: Text(
+            value == '-' ? '-' : value,
+            style: const TextStyle(color: Colors.white38, fontSize: 10),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
   );
 }

@@ -25,7 +25,7 @@ class _ResultScreenState extends State<ResultScreen>
     with TickerProviderStateMixin {
   String _result = '';
   bool _isLoading = true;
-  double? _tdee; // 프로필에서 불러온 TDEE
+  double? _tdee;
 
   late AnimationController _scanController;
   late Animation<double> _scanAnimation;
@@ -62,13 +62,27 @@ class _ResultScreenState extends State<ResultScreen>
     super.dispose();
   }
 
+  /// 칼로리 또는 영양소 정보가 하나라도 있으면 true
+  bool _checkHasNutrition(String result) {
+    // 칼로리 체크
+    if (_parseCaloriesFromResult(result) != null) return true;
+    // 영양소 체크
+    for (final key in ['탄수화물', '단백질', '지방']) {
+      for (final line in result.split('\n')) {
+        if (line.contains(key)) {
+          final parts = line.split(':');
+          if (parts.length > 1 && parts[1].trim().isNotEmpty) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   Future<void> _analyzeFood() async {
-    // TDEE 불러오기
     final prefs = await SharedPreferences.getInstance();
     final tdee = prefs.getDouble('tdee');
     if (tdee != null) setState(() => _tdee = tdee);
 
-    /// 네트워크 확인
     final connectivity = await Connectivity().checkConnectivity();
     if (connectivity.contains(ConnectivityResult.none)) {
       setState(() {
@@ -112,7 +126,8 @@ class _ResultScreenState extends State<ResultScreen>
       _scanController.stop();
       _fadeController.forward();
 
-      if (saveHistory) {
+      // 칼로리 또는 영양소 정보가 있을 때만 저장
+      if (saveHistory && _checkHasNutrition(_result)) {
         await DatabaseHelper.instance.insertAnalysis(
           imagePath: widget.imagePath,
           result: _result,
@@ -129,7 +144,6 @@ class _ResultScreenState extends State<ResultScreen>
     }
   }
 
-  /// 결과 텍스트에서 칼로리 숫자 파싱 (예: "약 520 kcal" → 520)
   int? _parseCaloriesFromResult(String result) {
     final pattern = RegExp(r'(\d{2,4})\s*(?:kcal|칼로리|cal)', caseSensitive: false);
     final match = pattern.firstMatch(result);
@@ -172,7 +186,6 @@ class _ResultScreenState extends State<ResultScreen>
 
       body: Column(
         children: [
-          // 이미지 + 스캔 애니메이션
           SizedBox(
             height: 320,
             width: double.infinity,
@@ -198,7 +211,6 @@ class _ResultScreenState extends State<ResultScreen>
                   ),
                 ),
 
-                // 스캔 라인
                 if (_isLoading)
                   AnimatedBuilder(
                     animation: _scanAnimation,
@@ -271,7 +283,6 @@ class _ResultScreenState extends State<ResultScreen>
             ),
           ),
 
-          // 결과 영역
           Expanded(
             child: _isLoading
                 ? const SizedBox()
@@ -282,7 +293,6 @@ class _ResultScreenState extends State<ResultScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 결과 헤더
                     Row(
                       children: [
                         Container(
@@ -299,7 +309,6 @@ class _ResultScreenState extends State<ResultScreen>
                     ),
                     const SizedBox(height: 20),
 
-                    // 결과 텍스트
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
@@ -315,18 +324,13 @@ class _ResultScreenState extends State<ResultScreen>
                     ),
 
                     const SizedBox(height: 12),
-                    // ─── 영양소 시각화 카드 ────────────────────
                     _NutritionCard(result: _result),
 
-
-
-                    // ─── TDEE 기준선 배너 ──────────────────────
                     if (_tdee != null)
                       _TdeeBanner(tdee: _tdee!, parsedCalories: parsedCalories),
 
                     const SizedBox(height: 12),
 
-                    // 참고 안내
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
@@ -355,7 +359,6 @@ class _ResultScreenState extends State<ResultScreen>
             ),
           ),
 
-          // 다시 찍기 버튼
           if (!_isLoading)
             SafeArea(
               child: Padding(
@@ -407,7 +410,6 @@ class _TdeeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 비율 계산 (칼로리 파싱 성공 시)
     final double? ratio = parsedCalories != null ? parsedCalories! / tdee : null;
     final double clampedRatio = (ratio ?? 0.0).clamp(0.0, 1.0);
 
@@ -441,7 +443,6 @@ class _TdeeBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 헤더
           Row(
             children: [
               const Icon(Icons.local_fire_department_outlined, color: Colors.deepOrange, size: 16),
@@ -456,14 +457,11 @@ class _TdeeBanner extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // 게이지 바
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: Stack(
               children: [
-                // 배경
                 Container(height: 6, color: Colors.white.withOpacity(0.07)),
-                // 채움
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 800),
                   curve: Curves.easeOut,
@@ -480,7 +478,6 @@ class _TdeeBanner extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // 수치 + 코멘트
           Row(
             children: [
               if (parsedCalories != null) ...[
@@ -502,7 +499,7 @@ class _TdeeBanner extends StatelessWidget {
   }
 }
 
-// ─── 프로필 미설정 유도 배너 (홈스크린 드로어에서 사용) ───────────────
+// ─── 프로필 미설정 유도 배너 ─────────────────────────────────────────
 
 class ProfileNudgeBanner extends StatelessWidget {
   final VoidCallback onTap;
@@ -579,7 +576,7 @@ Uint8List _convertToJpeg(Uint8List bytes) {
   return Uint8List.fromList(jpeg);
 }
 
-// ─── 영양소 시각화 카드 (result_screen 전용) ──────────────────────────
+// ─── 영양소 시각화 카드 ───────────────────────────────────────────────
 
 class _NutritionCard extends StatelessWidget {
   final String result;
@@ -619,7 +616,6 @@ class _NutritionCard extends StatelessWidget {
     final fat = _parseG('지방') ?? 0;
     final total = carbs + protein + fat;
 
-    // 파싱된 값이 없으면 카드 숨김
     if (carbsStr == '-' && proteinStr == '-' && fatStr == '-') return const SizedBox.shrink();
 
     return Container(
@@ -636,7 +632,6 @@ class _NutritionCard extends StatelessWidget {
           const Text('영양소', style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
           const SizedBox(height: 14),
 
-          // 비율 바
           if (total > 0) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -663,7 +658,6 @@ class _NutritionCard extends StatelessWidget {
             const SizedBox(height: 14),
           ],
 
-          // 영양소 수치
           Row(children: [
             Expanded(child: _MacroCol(label: '탄수화물', value: carbsStr, color: Colors.blue.shade300)),
             Expanded(child: _MacroCol(label: '단백질', value: proteinStr, color: Colors.green.shade400)),
