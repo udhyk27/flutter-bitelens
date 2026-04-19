@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -105,43 +107,97 @@ class _ResultScreenState extends State<ResultScreen>
           ? rawBytes
           : await compute(_convertToJpeg, rawBytes);
 
-      final response = await http.post(
-        Uri.parse('https://analyzefood-mfdr4grlbq-uc.a.run.app'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'imageBase64': base64Encode(imageBytes),
-          'detailedAnalysis': detailedAnalysis,
-          'language': language,
-          'aiModel': Api().aiModel,
-        }),
+      // App Check 토큰 (등록된 앱임을 Cloud Function에 증명)
+      String? appCheckToken;
+      try {
+        appCheckToken = await FirebaseAppCheck.instance.getToken();
+      } catch (e) {
+        debugPrint('App Check token error: $e');
+      }
+
+      final result = await _postWithRetry(
+        base64Image: base64Encode(imageBytes),
+        detailedAnalysis: detailedAnalysis,
+        language: language,
+        aiModel: Api().aiModel,
+        appCheckToken: appCheckToken,
       );
 
-      final data = jsonDecode(response.body);
-
       setState(() {
-        _result = data['result'] ?? '분석 실패';
+        _result = result;
         _isLoading = false;
       });
 
       _scanController.stop();
       _fadeController.forward();
 
-      // 칼로리 또는 영양소 정보가 있을 때만 저장
       if (saveHistory && _checkHasNutrition(_result)) {
         await DatabaseHelper.instance.insertAnalysis(
           imagePath: widget.imagePath,
           result: _result,
         );
       }
+    } on SocketException {
+      _setError('네트워크 연결을 확인해주세요.');
+    } on TimeoutException {
+      _setError('분석 시간이 초과되었습니다. 다시 시도해주세요.');
     } catch (e) {
-      debugPrint('오류 발생: $e');
-      setState(() {
-        _result = '오류가 발생했습니다.';
-        _isLoading = false;
-      });
-      _scanController.stop();
-      _fadeController.forward();
+      debugPrint('분석 오류: $e');
+      _setError('분석 중 오류가 발생했습니다.');
     }
+  }
+
+  void _setError(String msg) {
+    if (!mounted) return;
+    setState(() { _result = msg; _isLoading = false; });
+    _scanController.stop();
+    _fadeController.forward();
+  }
+
+  /// 최대 3회 재시도 (지수 백오프)
+  Future<String> _postWithRetry({
+    required String base64Image,
+    required bool detailedAnalysis,
+    required String language,
+    required String? aiModel,
+    required String? appCheckToken,
+    int maxRetries = 3,
+  }) async {
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        final response = await http.post(
+          Uri.parse('https://analyzefood-mfdr4grlbq-uc.a.run.app'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (appCheckToken != null) 'X-Firebase-AppCheck': appCheckToken,
+          },
+          body: jsonEncode({
+            'imageBase64': base64Image,
+            'detailedAnalysis': detailedAnalysis,
+            'language': language,
+            'aiModel': aiModel,
+          }),
+        ).timeout(const Duration(seconds: 30));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          return data['result'] ?? '분석 결과를 받지 못했습니다.';
+        } else if (response.statusCode == 401) {
+          throw Exception('앱 인증에 실패했습니다. 앱을 재시작해주세요.');
+        } else if (response.statusCode == 429) {
+          throw Exception('서버가 혼잡합니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          throw Exception('서버 오류 (${response.statusCode})');
+        }
+      } on TimeoutException {
+        if (attempt == maxRetries - 1) rethrow;
+        await Future.delayed(Duration(seconds: (attempt + 1) * 2));
+      } on SocketException {
+        if (attempt == maxRetries - 1) rethrow;
+        await Future.delayed(Duration(seconds: (attempt + 1) * 2));
+      }
+    }
+    throw Exception('분석에 실패했습니다.');
   }
 
   int? _parseCaloriesFromResult(String result) {

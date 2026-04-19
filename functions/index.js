@@ -1,88 +1,113 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { defineSecret } = require("firebase-functions/params");
+const { initializeApp } = require("firebase-admin/app");
+const { getAppCheck } = require("firebase-admin/app-check");
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+
+// Firebase Admin 초기화 (App Check 검증에 필요)
+initializeApp();
 
 exports.analyzeFood = onRequest(
   { secrets: [GEMINI_API_KEY] },
   async (req, res) => {
-  try {
-    const { imageBase64, detailedAnalysis, language, aiModel } = req.body;
+    // ── App Check 검증 ──────────────────────────────────────────────────
+    // 등록된 앱(Play Integrity / DeviceCheck)에서 보낸 요청만 통과시킵니다.
+    // 개발 시 디버그 토큰 설정:
+    //   1) kDebugMode에서 앱 실행 → 콘솔에 출력되는 UUID 복사
+    //   2) Firebase 콘솔 > App Check > 앱 > 디버그 토큰 관리 > UUID 등록
+    const appCheckToken = req.header("X-Firebase-AppCheck");
+    if (!appCheckToken) {
+      res.status(401).json({ error: "Unauthorized: App Check token required" });
+      return;
+    }
+    try {
+      await getAppCheck().verifyToken(appCheckToken);
+    } catch (err) {
+      console.warn("App Check verification failed:", err.message);
+      res.status(401).json({ error: "Unauthorized: Invalid App Check token" });
+      return;
+    }
+    // ───────────────────────────────────────────────────────────────────
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.value());
-    const model = genAI.getGenerativeModel({
-      model: aiModel || "gemini-2.5-flash-lite" // 없으면 기본값
-    });
+    try {
+      const { imageBase64, detailedAnalysis, language, aiModel } = req.body;
 
-    const basePrompt = {
-      '한국어': detailedAnalysis
-        ? `이 음식 사진을 최대한 정밀하게 분석해줘.
-           음식 이름:
-           예상 칼로리:
-           주요 영양소:
-           - 탄수화물:
-           - 단백질:
-           - 지방:
-           - 나트륨:
-           - 식이섬유:
-           추가 정보: 재료, 조리법, 혈당지수(GI) 등 상세하게`
-        : `이 음식 사진을 분석해줘. 다음 형식으로 답해줘:
-           음식 이름:
-           예상 칼로리:
-           주요 영양소:
-           - 탄수화물:
-           - 단백질:
-           - 지방:`,
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.value());
+      const model = genAI.getGenerativeModel({
+        model: aiModel || "gemini-2.5-flash-lite",
+      });
 
-      'English': detailedAnalysis
-        ? `Analyze this food photo in detail.
-           Food name:
-           Estimated calories:
-           Main nutrients:
-           - Carbohydrates:
-           - Protein:
-           - Fat:
-           - Sodium:
-           - Dietary fiber:
-           Additional info: ingredients, cooking method, glycemic index (GI), etc.`
-        : `Analyze this food photo. Reply in this format:
-           Food name:
-           Estimated calories:
-           Main nutrients:
-           - Carbohydrates:
-           - Protein:
-           - Fat:`,
+      const basePrompt = {
+        '한국어': detailedAnalysis
+          ? `이 음식 사진을 최대한 정밀하게 분석해줘.
+             음식 이름:
+             예상 칼로리:
+             주요 영양소:
+             - 탄수화물:
+             - 단백질:
+             - 지방:
+             - 나트륨:
+             - 식이섬유:
+             추가 정보: 재료, 조리법, 혈당지수(GI) 등 상세하게`
+          : `이 음식 사진을 분석해줘. 다음 형식으로 답해줘:
+             음식 이름:
+             예상 칼로리:
+             주요 영양소:
+             - 탄수화물:
+             - 단백질:
+             - 지방:`,
 
-      '日本語': detailedAnalysis
-        ? `この料理の写真を詳しく分析してください。
-           料理名：
-           推定カロリー：
-           主な栄養素：
-           - 炭水化物：
-           - タンパク質：
-           - 脂質：
-           - ナトリウム：
-           - 食物繊維：
-           追加情報：材料、調理法、グリセミック指数（GI）など`
-        : `この料理の写真を分析してください。次の形式で答えてください：
-           料理名：
-           推定カロリー：
-           主な栄養素：
-           - 炭水化物：
-           - タンパク質：
-           - 脂質：`,
-    }[language ?? '한국어'];
+        'English': detailedAnalysis
+          ? `Analyze this food photo in detail.
+             Food name:
+             Estimated calories:
+             Main nutrients:
+             - Carbohydrates:
+             - Protein:
+             - Fat:
+             - Sodium:
+             - Dietary fiber:
+             Additional info: ingredients, cooking method, glycemic index (GI), etc.`
+          : `Analyze this food photo. Reply in this format:
+             Food name:
+             Estimated calories:
+             Main nutrients:
+             - Carbohydrates:
+             - Protein:
+             - Fat:`,
 
-    const result = await model.generateContent([
-      { inlineData: { data: imageBase64, mimeType: "image/jpeg" } },
-      { text: basePrompt },
-    ]);
+        '日本語': detailedAnalysis
+          ? `この料理の写真を詳しく分析してください。
+             料理名：
+             推定カロリー：
+             主な栄養素：
+             - 炭水化物：
+             - タンパク質：
+             - 脂質：
+             - ナトリウム：
+             - 食物繊維：
+             追加情報：材料、調理法、グリセミック指数（GI）など`
+          : `この料理の写真を分析してください。次の形式で答えてください：
+             料理名：
+             推定カロリー：
+             主な栄養素：
+             - 炭水化物：
+             - タンパク質：
+             - 脂質：`,
+      }[language ?? '한국어'];
 
-    res.json({ result: result.response.text() });
+      const result = await model.generateContent([
+        { inlineData: { data: imageBase64, mimeType: "image/jpeg" } },
+        { text: basePrompt },
+      ]);
 
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: e.message });
+      res.json({ result: result.response.text() });
+
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: e.message });
+    }
   }
-});
+);
