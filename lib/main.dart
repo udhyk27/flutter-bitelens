@@ -2,7 +2,9 @@ import 'package:bitelens/screens/home_screen.dart';
 import 'package:bitelens/screens/onboarding_screen.dart';
 import 'package:bitelens/services/api_service.dart';
 import 'package:camera/camera.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -18,6 +20,15 @@ Future<void> main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   await Firebase.initializeApp();
+
+  // App Check: 등록된 앱에서만 Cloud Function 호출 가능하도록 보호
+  // 디버그 모드에서는 debug provider 사용 → 콘솔에 출력되는 UUID를
+  // Firebase 콘솔 > App Check > 앱 > 디버그 토큰 관리에 등록해야 합니다.
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+  );
+
   _cameras = await availableCameras();
   Api().getRemoteConfig();
 

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bitelens/services/database_service.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -11,33 +12,99 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  static const int _pageSize = 20;
+
   List<Map<String, dynamic>> _history = [];
+  List<Map<String, dynamic>> _weeklyData = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  bool _showFavoritesOnly = false;
+  double? _tdee;
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    _scrollController = ScrollController()..addListener(_onScroll);
+    _loadInitial();
   }
 
-  Future<void> _loadHistory() async {
-    final data = await DatabaseHelper.instance.getAnalysisHistory();
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 300) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadInitial() async {
+    setState(() { _isLoading = true; _hasMore = true; });
+    final prefs = await SharedPreferences.getInstance();
+    _tdee = prefs.getDouble('tdee');
+
+    final data = await DatabaseHelper.instance.getAnalysisHistoryPaged(
+      limit: _pageSize,
+      offset: 0,
+      favoritesOnly: _showFavoritesOnly,
+    );
+    final weekly = await DatabaseHelper.instance.getWeeklyHistory();
+
     setState(() {
-      _history = data;
+      _history = List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e)));
+      _weeklyData = weekly;
       _isLoading = false;
+      _hasMore = data.length == _pageSize;
+    });
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+
+    final data = await DatabaseHelper.instance.getAnalysisHistoryPaged(
+      limit: _pageSize,
+      offset: _history.length,
+      favoritesOnly: _showFavoritesOnly,
+    );
+
+    setState(() {
+      _history.addAll(data.map((e) => Map<String, dynamic>.from(e)));
+      _hasMore = data.length == _pageSize;
+      _isLoadingMore = false;
     });
   }
 
   Future<void> _deleteItem(int id) async {
     await DatabaseHelper.instance.deleteAnalysis(id);
-    await _loadHistory();
+    _history.removeWhere((e) => e['id'] == id);
+    final weekly = await DatabaseHelper.instance.getWeeklyHistory();
+    setState(() { _weeklyData = weekly; });
   }
 
-  /// 날짜별 그룹핑 — { '2025.01.15': [...], ... }
+  Future<void> _toggleFavorite(int id, bool current) async {
+    await DatabaseHelper.instance.toggleFavorite(id, !current);
+    final idx = _history.indexWhere((e) => e['id'] == id);
+    if (idx == -1) return;
+    setState(() {
+      _history[idx] = Map<String, dynamic>.from(_history[idx])
+        ..['is_favorite'] = current ? 0 : 1;
+    });
+    // 즐겨찾기 필터 중이면 목록에서 제거
+    if (_showFavoritesOnly && current) {
+      setState(() => _history.removeAt(idx));
+    }
+  }
+
   Map<String, List<Map<String, dynamic>>> _groupByDate() {
     final map = <String, List<Map<String, dynamic>>>{};
     for (final item in _history) {
-      final dt = DateTime.parse(item['created_at'] as String);
+      final dt = DateTime.parse(item['created_at'] as String).toLocal();
       final key = _dateLabel(dt);
       map.putIfAbsent(key, () => []).add(item);
     }
@@ -55,7 +122,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   String _timeLabel(String isoDate) {
-    final dt = DateTime.parse(isoDate);
+    final dt = DateTime.parse(isoDate).toLocal();
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
@@ -86,7 +153,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (_history.isNotEmpty)
+          // 즐겨찾기 필터 토글
+          IconButton(
+            icon: Icon(
+              _showFavoritesOnly ? Icons.star : Icons.star_outline,
+              color: _showFavoritesOnly ? Colors.amber : Colors.white38,
+              size: 22,
+            ),
+            onPressed: () async {
+              setState(() => _showFavoritesOnly = !_showFavoritesOnly);
+              await _loadInitial();
+            },
+          ),
+          if (_history.isNotEmpty && !_showFavoritesOnly)
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: Center(
@@ -97,7 +176,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '총 ${_history.length}개',
+                    '총 ${_history.length}${_hasMore ? '+' : ''}개',
                     style: const TextStyle(color: Colors.white38, fontSize: 11),
                   ),
                 ),
@@ -105,58 +184,85 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
         ],
       ),
-      body: _history.isEmpty
-          ? _buildEmpty()
-          : ListView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-        itemCount: dateKeys.length,
-        itemBuilder: (context, i) {
-          final dateKey = dateKeys[i];
-          final items = grouped[dateKey]!;
-          // 해당 날짜 총 칼로리 합산
-          final totalCal = items.fold<int>(0, (sum, item) {
-            final cal = NutritionParser.parseCaloriesInt(item['result'] as String);
-            return sum + (cal ?? 0);
-          });
+      body: RefreshIndicator(
+        color: Colors.deepOrange,
+        backgroundColor: const Color(0xFF1A1A1A),
+        onRefresh: _loadInitial,
+        child: _history.isEmpty
+            ? _buildEmpty()
+            : ListView.builder(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+                itemCount: dateKeys.length + (_weeklyData.isNotEmpty ? 1 : 0) + (_isLoadingMore ? 1 : 0),
+                itemBuilder: (context, i) {
+                  // 주간 차트 (맨 위)
+                  if (i == 0 && _weeklyData.isNotEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _WeeklyCalChart(weeklyHistory: _weeklyData, tdee: _tdee),
+                    );
+                  }
+                  final adjustedIndex = _weeklyData.isNotEmpty ? i - 1 : i;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 날짜 헤더
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 16, 4, 10),
-                child: Row(
-                  children: [
-                    Text(
-                      dateKey,
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1,
+                  // 로딩 인디케이터 (맨 아래)
+                  if (adjustedIndex == dateKeys.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: CircularProgressIndicator(color: Colors.white24, strokeWidth: 1.5)),
+                    );
+                  }
+
+                  final dateKey = dateKeys[adjustedIndex];
+                  final items = grouped[dateKey]!;
+                  final totalCal = items.fold<int>(0, (sum, item) {
+                    return sum + (NutritionParser.parseCaloriesInt(item['result'] as String) ?? 0);
+                  });
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 16, 4, 10),
+                        child: Row(
+                          children: [
+                            Text(
+                              dateKey,
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(height: 0.5, width: 20, color: Colors.white12),
+                            const Spacer(),
+                            if (totalCal > 0)
+                              Text(
+                                '총 $totalCal kcal',
+                                style: const TextStyle(color: Colors.deepOrange, fontSize: 11),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(height: 0.5, width: 20, color: Colors.white12),
-                    const Spacer(),
-                    if (totalCal > 0)
-                      Text(
-                        '총 ${totalCal} kcal',
-                        style: const TextStyle(color: Colors.deepOrange, fontSize: 11),
-                      ),
-                  ],
-                ),
+                      ...items.map((item) => _HistoryCard(
+                        id: item['id'] as int,
+                        imagePath: item['image_path'] as String,
+                        result: item['result'] as String,
+                        time: _timeLabel(item['created_at'] as String),
+                        createdAt: item['created_at'] as String,
+                        isFavorite: (item['is_favorite'] as int? ?? 0) == 1,
+                        onDelete: () => _showDeleteDialog(item['id'] as int),
+                        onFavoriteToggle: () => _toggleFavorite(
+                          item['id'] as int,
+                          (item['is_favorite'] as int? ?? 0) == 1,
+                        ),
+                      )),
+                    ],
+                  );
+                },
               ),
-              // 카드 목록
-              ...items.map((item) => _HistoryCard(
-                imagePath: item['image_path'] as String,
-                result: item['result'] as String,
-                time: _timeLabel(item['created_at'] as String),
-                onDelete: () => _showDeleteDialog(item['id'] as int),
-              )),
-            ],
-          );
-        },
       ),
     );
   }
@@ -165,14 +271,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.history, size: 56, color: Colors.white12),
-          SizedBox(height: 16),
-          Text('분석 기록이 없어요',
-              style: TextStyle(color: Colors.white30, fontSize: 15, letterSpacing: 1)),
-          SizedBox(height: 8),
-          Text('음식을 촬영해서 분석해보세요',
-              style: TextStyle(color: Colors.white12, fontSize: 13)),
+        children: [
+          Icon(
+            _showFavoritesOnly ? Icons.star_outline : Icons.history,
+            size: 56, color: Colors.white12,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _showFavoritesOnly ? '즐겨찾기한 기록이 없어요' : '분석 기록이 없어요',
+            style: const TextStyle(color: Colors.white30, fontSize: 15, letterSpacing: 1),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _showFavoritesOnly ? '별표를 눌러 기록을 저장해보세요' : '음식을 촬영해서 분석해보세요',
+            style: const TextStyle(color: Colors.white12, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -202,7 +315,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 }
 
-// ─── 영양소 파서 (result_screen에서도 공유 사용) ──────────────────────
+// ─── 영양소 파서 ──────────────────────────────────────────────────────
 
 class NutritionParser {
   static String? parse(String result, String key) {
@@ -227,35 +340,170 @@ class NutritionParser {
   static String sodium(String result) => parse(result, '나트륨') ?? '-';
   static String fiber(String result) => parse(result, '식이섬유') ?? '-';
 
-  /// 칼로리 숫자만 추출 (합산용)
   static int? parseCaloriesInt(String result) {
     final raw = calories(result);
     final match = RegExp(r'(\d+)').firstMatch(raw);
     return match != null ? int.tryParse(match.group(1)!) : null;
   }
 
-  /// g 단위 숫자 추출 (그래프용)
   static double? parseGrams(String result, String key) {
     final raw = parse(result, key);
     if (raw == null) return null;
     final match = RegExp(r'([\d.]+)').firstMatch(raw);
     return match != null ? double.tryParse(match.group(1)!) : null;
   }
+
+  static String mealType(String isoDate) {
+    final hour = DateTime.parse(isoDate).toLocal().hour;
+    if (hour >= 5 && hour < 10) return '아침';
+    if (hour >= 10 && hour < 14) return '점심';
+    if (hour >= 14 && hour < 18) return '간식';
+    if (hour >= 18 && hour < 22) return '저녁';
+    return '야식';
+  }
+
+  static Color mealColor(String isoDate) {
+    switch (mealType(isoDate)) {
+      case '아침': return Colors.orange.shade300;
+      case '점심': return Colors.blue.shade300;
+      case '간식': return Colors.purple.shade300;
+      case '저녁': return Colors.teal.shade300;
+      default: return Colors.grey.shade500;
+    }
+  }
+}
+
+// ─── 주간 칼로리 차트 ─────────────────────────────────────────────────
+
+class _WeeklyCalChart extends StatelessWidget {
+  final List<Map<String, dynamic>> weeklyHistory;
+  final double? tdee;
+  const _WeeklyCalChart({required this.weeklyHistory, this.tdee});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final days = List.generate(7, (i) {
+      final d = now.subtract(Duration(days: 6 - i));
+      return DateTime(d.year, d.month, d.day);
+    });
+
+    final calsByDay = {for (final d in days) d: 0};
+    for (final item in weeklyHistory) {
+      final dt = DateTime.parse(item['created_at'] as String).toLocal();
+      final key = DateTime(dt.year, dt.month, dt.day);
+      if (calsByDay.containsKey(key)) {
+        calsByDay[key] = calsByDay[key]! +
+            (NutritionParser.parseCaloriesInt(item['result'] as String) ?? 0);
+      }
+    }
+
+    final maxCal = calsByDay.values.fold<int>(0, (a, b) => a > b ? a : b);
+    final dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+    const maxBarH = 56.0;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.bar_chart_rounded, color: Colors.white24, size: 13),
+            const SizedBox(width: 6),
+            const Text('이번 주 섭취 칼로리',
+                style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 1.5)),
+            if (tdee != null) ...[
+              const Spacer(),
+              Text('목표 ${tdee!.toStringAsFixed(0)} kcal',
+                  style: const TextStyle(color: Colors.white24, fontSize: 10)),
+            ],
+          ]),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: days.asMap().entries.map((entry) {
+              final i = entry.key;
+              final day = entry.value;
+              final cal = calsByDay[day] ?? 0;
+              final isToday = i == 6;
+              final ratio = maxCal > 0 ? cal / maxCal : 0.0;
+              final barH = maxBarH * (ratio > 0 ? ratio.clamp(0.05, 1.0) : 0.0);
+              final overTdee = tdee != null && cal > tdee!;
+              final barColor = isToday
+                  ? (overTdee ? Colors.red.shade400 : Colors.deepOrange)
+                  : (cal > 0 ? Colors.white.withOpacity(0.2) : Colors.transparent);
+
+              return Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (cal > 0)
+                      Text(
+                        cal >= 1000 ? '${(cal / 1000).toStringAsFixed(1)}k' : '$cal',
+                        style: TextStyle(
+                          color: isToday ? Colors.deepOrange : Colors.white24,
+                          fontSize: 8,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.visible,
+                      ),
+                    const SizedBox(height: 3),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.easeOut,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      height: barH,
+                      decoration: BoxDecoration(
+                        color: barColor,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      dayNames[(day.weekday - 1) % 7],
+                      style: TextStyle(
+                        color: isToday ? Colors.deepOrange : Colors.white24,
+                        fontSize: 10,
+                        fontWeight: isToday ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─── 히스토리 카드 ────────────────────────────────────────────────────
 
 class _HistoryCard extends StatelessWidget {
+  final int id;
   final String imagePath;
   final String result;
   final String time;
+  final String createdAt;
+  final bool isFavorite;
   final VoidCallback onDelete;
+  final VoidCallback onFavoriteToggle;
 
   const _HistoryCard({
+    required this.id,
     required this.imagePath,
     required this.result,
     required this.time,
+    required this.createdAt,
+    required this.isFavorite,
     required this.onDelete,
+    required this.onFavoriteToggle,
   });
 
   @override
@@ -265,6 +513,8 @@ class _HistoryCard extends StatelessWidget {
     final carbs = NutritionParser.carbs(result);
     final protein = NutritionParser.protein(result);
     final fat = NutritionParser.fat(result);
+    final meal = NutritionParser.mealType(createdAt);
+    final mealColor = NutritionParser.mealColor(createdAt);
 
     return GestureDetector(
       onTap: () => _showDetailSheet(context),
@@ -285,31 +535,41 @@ class _HistoryCard extends StatelessWidget {
                 child: File(imagePath).existsSync()
                     ? Image.file(File(imagePath), fit: BoxFit.cover)
                     : Container(
-                  color: const Color(0xFF1E1E1E),
-                  child: const Icon(Icons.image_not_supported, color: Colors.white12, size: 24),
-                ),
+                        color: const Color(0xFF1E1E1E),
+                        child: const Icon(Icons.image_not_supported, color: Colors.white12, size: 24),
+                      ),
               ),
             ),
 
             // 내용
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 4, 12),
+                padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
+                        // 식사 시간대 뱃지
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: mealColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(meal,
+                              style: TextStyle(color: mealColor, fontSize: 9, fontWeight: FontWeight.w600)),
+                        ),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(foodName,
-                              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                               maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                         Text(time, style: const TextStyle(color: Colors.white24, fontSize: 11)),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    // 칼로리 뱃지
+                    const SizedBox(height: 5),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -319,8 +579,7 @@ class _HistoryCard extends StatelessWidget {
                       child: Text(calories,
                           style: const TextStyle(color: Colors.deepOrange, fontSize: 11, fontWeight: FontWeight.w600)),
                     ),
-                    const SizedBox(height: 8),
-                    // 영양소 미니 태그
+                    const SizedBox(height: 7),
                     Row(
                       children: [
                         Flexible(child: _NutriBadge(label: '탄', value: carbs, color: Colors.blue.shade300)),
@@ -335,11 +594,29 @@ class _HistoryCard extends StatelessWidget {
               ),
             ),
 
-            // 삭제 버튼
-            IconButton(
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline, color: Colors.white12, size: 20),
+            // 즐겨찾기 + 삭제
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: onFavoriteToggle,
+                  icon: Icon(
+                    isFavorite ? Icons.star : Icons.star_outline,
+                    color: isFavorite ? Colors.amber : Colors.white12,
+                    size: 18,
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  constraints: const BoxConstraints(),
+                ),
+                IconButton(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline, color: Colors.white12, size: 18),
+                  padding: const EdgeInsets.all(4),
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
+            const SizedBox(width: 4),
           ],
         ),
       ),
@@ -361,7 +638,6 @@ class _HistoryCard extends StatelessWidget {
         expand: false,
         builder: (context, scrollController) => Column(
           children: [
-            // 핸들 + 공유
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Row(
@@ -394,24 +670,17 @@ class _HistoryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 이미지
                     ClipRRect(
                       borderRadius: BorderRadius.circular(14),
                       child: File(imagePath).existsSync()
                           ? Image.file(File(imagePath),
-                          width: double.infinity, height: 200, fit: BoxFit.cover)
+                              width: double.infinity, height: 200, fit: BoxFit.cover)
                           : Container(height: 200, color: const Color(0xFF1E1E1E),
-                          child: const Center(child: Icon(Icons.image_not_supported, color: Colors.white12))),
+                              child: const Center(child: Icon(Icons.image_not_supported, color: Colors.white12))),
                     ),
-
                     const SizedBox(height: 20),
-
-                    // 영양소 카드
                     _NutritionCard(result: result),
-
                     const SizedBox(height: 16),
-
-                    // 결과 헤더
                     Row(children: [
                       Container(width: 3, height: 18,
                           decoration: BoxDecoration(color: Colors.deepOrange, borderRadius: BorderRadius.circular(2))),
@@ -420,8 +689,6 @@ class _HistoryCard extends StatelessWidget {
                         style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1)),
                     ]),
                     const SizedBox(height: 12),
-
-                    // 결과 텍스트
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
@@ -467,7 +734,6 @@ class _NutritionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 칼로리 크게
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -486,13 +752,11 @@ class _NutritionCard extends StatelessWidget {
 
           if (total > 0) ...[
             const SizedBox(height: 16),
-            // 비율 바
             _MacroBar(carbs: carbs ?? 0, protein: protein ?? 0, fat: fat ?? 0, total: total),
             const SizedBox(height: 14),
           ] else
             const SizedBox(height: 12),
 
-          // 영양소 행
           Row(
             children: [
               Expanded(child: _MacroItem(label: '탄수화물', value: NutritionParser.carbs(result), color: Colors.blue.shade300)),
@@ -501,7 +765,6 @@ class _NutritionCard extends StatelessWidget {
             ],
           ),
 
-          // 상세 분석인 경우 나트륨/식이섬유
           if (NutritionParser.sodium(result) != '-' || NutritionParser.fiber(result) != '-') ...[
             const SizedBox(height: 12),
             Container(height: 0.5, color: Colors.white.withOpacity(0.06)),

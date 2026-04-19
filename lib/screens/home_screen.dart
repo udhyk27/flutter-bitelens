@@ -1,6 +1,7 @@
 import 'package:bitelens/screens/profile_screen.dart';
 import 'package:bitelens/screens/result_screen.dart';
 import 'package:bitelens/screens/settings_screen.dart';
+import 'package:bitelens/services/database_service.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,7 +19,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late CameraController controller;
   bool _isInitialized = false;
-  bool _isProfileSet = false; // 프로필 설정 여부
+  bool _isProfileSet = false;
+  int _todayCalories = 0;
+  double? _tdee;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -43,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }).catchError((Object e) {});
 
     _checkProfileSet();
+    _loadTodayStats();
   }
 
   @override
@@ -52,13 +56,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  /// 키/몸무게/나이 중 하나라도 입력되어 있으면 설정된 것으로 판단
   Future<void> _checkProfileSet() async {
     final prefs = await SharedPreferences.getInstance();
     final height = prefs.getString('height') ?? '';
     final weight = prefs.getString('weight') ?? '';
     final age = prefs.getString('age') ?? '';
     setState(() => _isProfileSet = height.isNotEmpty && weight.isNotEmpty && age.isNotEmpty);
+  }
+
+  Future<void> _loadTodayStats() async {
+    final prefs = await SharedPreferences.getInstance();
+    final tdee = prefs.getDouble('tdee');
+    final history = await DatabaseHelper.instance.getAnalysisHistory();
+    final now = DateTime.now();
+    final todayCal = history.fold<int>(0, (sum, r) {
+      final dt = DateTime.parse(r['created_at'] as String).toLocal();
+      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+        return sum + (NutritionParser.parseCaloriesInt(r['result'] as String) ?? 0);
+      }
+      return sum;
+    });
+    if (!mounted) return;
+    setState(() {
+      _todayCalories = todayCal;
+      _tdee = tdee;
+    });
   }
 
   @override
@@ -132,6 +154,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (_todayCalories > 0 || _tdee != null)
+                      _TodayCalBanner(todayCalories: _todayCalories, tdee: _tdee),
+                    if (_todayCalories > 0 || _tdee != null) const SizedBox(height: 12),
                     const Text('음식을 프레임에 맞춰주세요',
                         style: TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 1.2)),
                     const SizedBox(height: 28),
@@ -251,7 +276,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image == null || !mounted) return;
-    Navigator.push(context, MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)));
+    _loadTodayStats();
   }
 
   Future<void> _takePicture() async {
@@ -259,7 +285,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       final XFile image = await controller.takePicture();
       if (!mounted) return;
-      Navigator.push(context, MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)));
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)));
+      _loadTodayStats();
     } catch (e) {
       debugPrint('촬영 오류: $e');
     }
@@ -349,6 +376,76 @@ class _ShutterButton extends StatelessWidget {
             decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── 오늘 칼로리 요약 배너 ────────────────────────────────────────────
+
+class _TodayCalBanner extends StatelessWidget {
+  final int todayCalories;
+  final double? tdee;
+  const _TodayCalBanner({required this.todayCalories, this.tdee});
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = (tdee != null && tdee! > 0) ? (todayCalories / tdee!).clamp(0.0, 1.0) : null;
+    final Color barColor = ratio == null
+        ? Colors.white38
+        : ratio < 0.5
+            ? Colors.green.shade400
+            : ratio < 0.85
+                ? Colors.orange.shade300
+                : Colors.red.shade300;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.local_fire_department_outlined, color: Colors.deepOrange, size: 13),
+              const SizedBox(width: 5),
+              const Text('오늘', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 0.5)),
+              const Spacer(),
+              Text(
+                tdee != null
+                    ? '$todayCalories / ${tdee!.toStringAsFixed(0)} kcal'
+                    : '$todayCalories kcal',
+                style: TextStyle(color: barColor, fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          if (ratio != null) ...[
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: Stack(
+                children: [
+                  Container(height: 3, color: Colors.white.withOpacity(0.1)),
+                  FractionallySizedBox(
+                    widthFactor: ratio,
+                    child: Container(
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: barColor,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
