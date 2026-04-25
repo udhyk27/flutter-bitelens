@@ -1,8 +1,9 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'home_screen.dart';
 import 'profile_screen.dart';
-import 'package:camera/camera.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -17,36 +18,49 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
 
-  final List<_OnboardingData> _pages = const [
+  static const List<_OnboardingData> _pages = [
     _OnboardingData(
       icon: Icons.camera_alt_outlined,
-      title: 'AI 음식 스캔',
-      subtitle: '음식을 찍으면\nAI가 칼로리와\n영양소를 분석해요',
+      step: '01',
+      title: '음식을 찍으면',
+      highlight: 'AI가 바로 분석',
+      description: '카메라나 갤러리 사진으로 음식 이름, 예상 칼로리, 주요 영양소를 확인해요.',
       accent: Colors.deepOrange,
     ),
     _OnboardingData(
       icon: Icons.local_fire_department_outlined,
-      title: '맞춤 칼로리 기준',
-      subtitle: '내 신체 정보를 입력하면\n하루 권장 칼로리를\n자동으로 계산해드려요',
-      accent: Color(0xFFFF7043),
+      step: '02',
+      title: '내 기준에 맞춰',
+      highlight: '하루 칼로리 관리',
+      description: '키, 몸무게, 활동량을 입력하면 TDEE 기준으로 섭취량을 비교할 수 있어요.',
+      accent: Color(0xFFFFB020),
     ),
     _OnboardingData(
-      icon: Icons.show_chart,
-      title: '섭취 기록 추적',
-      subtitle: '매일의 식사를 기록하고\n칼로리 추이를\n한눈에 확인하세요',
-      accent: Color(0xFFFF8A65),
+      icon: Icons.show_chart_outlined,
+      step: '03',
+      title: '기록이 쌓이면',
+      highlight: '식습관이 보여요',
+      description: '분석 기록과 주간 칼로리 흐름을 모아보고, 중요한 식사는 즐겨찾기로 남겨요.',
+      accent: Color(0xFF43D19E),
     ),
   ];
+
+  bool get _isLastPage => _currentPage == _pages.length - 1;
 
   @override
   void initState() {
     super.initState();
     _fadeController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
-    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
     _fadeController.forward();
   }
 
@@ -63,121 +77,80 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     if (!mounted) return;
 
-    if (goProfile) {
-      // 홈을 스택 바닥에 깔고 프로필을 그 위에 올림
-      // 뒤로가기 시 홈으로 자연스럽게 이동
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HomeScreen(cameras: widget.cameras)),
-      );
-      await Future.delayed(Duration.zero); // 빌드 완료 후 push
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ProfileScreen()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HomeScreen(cameras: widget.cameras)),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomeScreen(cameras: widget.cameras)),
+    );
+
+    if (!goProfile) return;
+
+    await Future.delayed(Duration.zero);
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+    );
   }
 
   void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeInOut,
-      );
+    if (_isLastPage) {
+      _completeOnboarding(goProfile: true);
+      return;
     }
+
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final data = _pages[_currentPage];
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SafeArea(
-          child: Column(
-            children: [
-              // 건너뛰기
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 16, 24, 0),
-                  child: GestureDetector(
-                    onTap: () => _completeOnboarding(),
-                    child: const Text('건너뛰기',
-                        style: TextStyle(color: Colors.white24, fontSize: 13)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+            child: Column(
+              children: [
+                _OnboardingTopBar(
+                  currentPage: _currentPage,
+                  pageCount: _pages.length,
+                  onSkip: () => _completeOnboarding(),
+                ),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (i) => setState(() => _currentPage = i),
+                    itemCount: _pages.length,
+                    itemBuilder: (_, i) => _OnboardingPage(data: _pages[i]),
                   ),
                 ),
-              ),
-
-              // 페이지
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (i) => setState(() => _currentPage = i),
-                  itemCount: _pages.length,
-                  itemBuilder: (_, i) => _OnboardingPage(data: _pages[i]),
+                _PageDots(
+                  currentPage: _currentPage,
+                  pageCount: _pages.length,
+                  activeColor: data.accent,
                 ),
-              ),
-
-              // 인디케이터
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_pages.length, (i) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: _currentPage == i ? 20 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: _currentPage == i ? Colors.deepOrange : Colors.white12,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                )),
-              ),
-
-              const SizedBox(height: 40),
-
-              // 버튼
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-                child: _currentPage < _pages.length - 1
-                    ? _PrimaryButton(
-                  label: '다음',
+                const SizedBox(height: 28),
+                _PrimaryButton(
+                  label: _isLastPage ? '내 정보 입력하고 시작' : '다음',
+                  icon: _isLastPage
+                      ? Icons.person_add_alt_1_outlined
+                      : Icons.arrow_forward_rounded,
+                  color: data.accent,
                   onTap: _nextPage,
-                )
-                    : Column(
-                  children: [
-                    _PrimaryButton(
-                      label: '내 정보 입력하고 시작',
-                      onTap: () => _completeOnboarding(goProfile: true),
-                    ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () => _completeOnboarding(),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Center(
-                          child: Text('나중에 설정할게요',
-                              style: TextStyle(color: Colors.white38, fontSize: 15)),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-
-              const SizedBox(height: 40),
-            ],
+                const SizedBox(height: 12),
+                _TextButton(
+                  label: _isLastPage ? '나중에 설정할게요' : '바로 시작',
+                  onTap: () => _completeOnboarding(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -185,16 +158,68 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 }
 
-// ─── 온보딩 페이지 ────────────────────────────────────────────────────
-
 class _OnboardingData {
   final IconData icon;
-  final String title, subtitle;
+  final String step;
+  final String title;
+  final String highlight;
+  final String description;
   final Color accent;
+
   const _OnboardingData({
-    required this.icon, required this.title,
-    required this.subtitle, required this.accent,
+    required this.icon,
+    required this.step,
+    required this.title,
+    required this.highlight,
+    required this.description,
+    required this.accent,
   });
+}
+
+class _OnboardingTopBar extends StatelessWidget {
+  final int currentPage;
+  final int pageCount;
+  final VoidCallback onSkip;
+
+  const _OnboardingTopBar({
+    required this.currentPage,
+    required this.pageCount,
+    required this.onSkip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Text(
+          'BITE LENS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 4,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          '${currentPage + 1}/$pageCount',
+          style: const TextStyle(color: Colors.white30, fontSize: 12),
+        ),
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: onSkip,
+          behavior: HitTestBehavior.opaque,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              '건너뛰기',
+              style: TextStyle(color: Colors.white38, fontSize: 13),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _OnboardingPage extends StatelessWidget {
@@ -203,59 +228,127 @@ class _OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // 아이콘 컨테이너
-          Container(
-            width: 120, height: 120,
-            decoration: BoxDecoration(
-              color: data.accent.withOpacity(0.1),
-              shape: BoxShape.circle,
-              border: Border.all(color: data.accent.withOpacity(0.2), width: 1.5),
-            ),
-            child: Icon(data.icon, color: data.accent, size: 52),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _FeatureMark(data: data),
+        const SizedBox(height: 46),
+        Text(
+          data.step,
+          style: TextStyle(
+            color: data.accent,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 3,
           ),
-
-          const SizedBox(height: 48),
-
-          // 앱 이름
-          const Text('BITE LENS',
-            style: TextStyle(
-              color: Colors.white24,
-              fontSize: 11,
-              letterSpacing: 4,
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          data.title,
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+            height: 1.2,
           ),
-
-          const SizedBox(height: 12),
-
-          // 타이틀
-          Text(data.title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-            ),
-            textAlign: TextAlign.center,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          data.highlight,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 31,
+            fontWeight: FontWeight.w800,
+            height: 1.18,
           ),
-
-          const SizedBox(height: 20),
-
-          // 서브타이틀
-          Text(data.subtitle,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 18),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 300),
+          child: Text(
+            data.description,
             style: const TextStyle(
               color: Colors.white38,
-              fontSize: 16,
-              height: 1.7,
+              fontSize: 15,
+              height: 1.6,
             ),
             textAlign: TextAlign.center,
           ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureMark extends StatelessWidget {
+  final _OnboardingData data;
+  const _FeatureMark({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: 156,
+          height: 156,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: data.accent.withValues(alpha: 0.08),
+          ),
+        ),
+        Container(
+          width: 112,
+          height: 112,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF111111),
+            border: Border.all(color: data.accent.withValues(alpha: 0.45)),
+            boxShadow: [
+              BoxShadow(
+                color: data.accent.withValues(alpha: 0.18),
+                blurRadius: 34,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Icon(data.icon, color: data.accent, size: 46),
+        ),
+      ],
+    );
+  }
+}
+
+class _PageDots extends StatelessWidget {
+  final int currentPage;
+  final int pageCount;
+  final Color activeColor;
+
+  const _PageDots({
+    required this.currentPage,
+    required this.pageCount,
+    required this.activeColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        pageCount,
+        (i) => AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: currentPage == i ? 24 : 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: currentPage == i ? activeColor : Colors.white12,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       ),
     );
   }
@@ -263,8 +356,16 @@ class _OnboardingPage extends StatelessWidget {
 
 class _PrimaryButton extends StatelessWidget {
   final String label;
+  final IconData icon;
+  final Color color;
   final VoidCallback onTap;
-  const _PrimaryButton({required this.label, required this.onTap});
+
+  const _PrimaryButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -272,18 +373,52 @@ class _PrimaryButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
+        height: 56,
         decoration: BoxDecoration(
-          color: Colors.deepOrange,
-          borderRadius: BorderRadius.circular(16),
+          color: color,
+          borderRadius: BorderRadius.circular(14),
         ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TextButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _TextButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
         child: Center(
-          child: Text(label,
+          child: Text(
+            label,
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
+              color: Colors.white38,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
