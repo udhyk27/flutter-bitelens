@@ -391,6 +391,9 @@ class _TodayCalBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = (tdee != null && tdee! > 0) ? (todayCalories / tdee!).clamp(0.0, 1.0) : null;
+    final remaining = tdee != null ? (tdee! - todayCalories).round() : null;
+    final isOver = remaining != null && remaining < 0;
+
     final Color barColor = ratio == null
         ? Colors.white38
         : ratio < 0.5
@@ -400,7 +403,7 @@ class _TodayCalBanner extends StatelessWidget {
                 : Colors.red.shade300;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.55),
         borderRadius: BorderRadius.circular(12),
@@ -416,6 +419,13 @@ class _TodayCalBanner extends StatelessWidget {
               const SizedBox(width: 5),
               const Text('오늘', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 0.5)),
               const Spacer(),
+              if (ratio != null) ...[
+                Text(
+                  '${(ratio * 100).toInt()}%',
+                  style: TextStyle(color: barColor, fontSize: 11, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(width: 6),
+              ],
               Text(
                 tdee != null
                     ? '$todayCalories / ${tdee!.toStringAsFixed(0)} kcal'
@@ -430,11 +440,11 @@ class _TodayCalBanner extends StatelessWidget {
               borderRadius: BorderRadius.circular(3),
               child: Stack(
                 children: [
-                  Container(height: 3, color: Colors.white.withOpacity(0.1)),
+                  Container(height: 4, color: Colors.white.withOpacity(0.1)),
                   FractionallySizedBox(
                     widthFactor: ratio,
                     child: Container(
-                      height: 3,
+                      height: 4,
                       decoration: BoxDecoration(
                         color: barColor,
                         borderRadius: BorderRadius.circular(3),
@@ -442,6 +452,16 @@ class _TodayCalBanner extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              isOver
+                  ? '${(-remaining!)} kcal 초과'
+                  : '$remaining kcal 남음',
+              style: TextStyle(
+                color: isOver ? Colors.red.shade300 : Colors.white38,
+                fontSize: 10,
               ),
             ),
           ],

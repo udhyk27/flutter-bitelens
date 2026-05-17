@@ -441,69 +441,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white.withOpacity(0.06)),
                   ),
-                  child: Column(
-                    children: () {
-                      final reversed = _weightLog.reversed.take(10).toList();
-                      return reversed.asMap().entries.map((entry) {
-                        final i = entry.key;
-                        final row = entry.value;
-                        final weight = (row['weight'] as num).toDouble();
-                        final date = DateTime.parse(row['logged_at'] as String);
-                        final dateStr = '${date.month}/${date.day}';
-                        final timeStr =
-                            '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      children: () {
+                        final reversed = _weightLog.reversed.take(10).toList();
+                        return reversed.asMap().entries.map((entry) {
+                          final i = entry.key;
+                          final row = entry.value;
+                          final weight = (row['weight'] as num).toDouble();
+                          final date = DateTime.parse(row['logged_at'] as String);
+                          final dateStr = '${date.month}/${date.day}';
+                          final timeStr =
+                              '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
-                        double? diff;
-                        if (i + 1 < reversed.length) {
-                          diff = weight - (reversed[i + 1]['weight'] as num).toDouble();
-                        }
+                          double? diff;
+                          if (i + 1 < reversed.length) {
+                            diff = weight - (reversed[i + 1]['weight'] as num).toDouble();
+                          }
 
-                        return Column(
-                          children: [
-                            if (i > 0)
-                              Container(
-                                margin: const EdgeInsets.only(left: 54),
-                                height: 0.5,
-                                color: Colors.white.withOpacity(0.05),
-                              ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 38,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(dateStr, style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w600)),
-                                        Text(timeStr, style: const TextStyle(color: Colors.white24, fontSize: 11)),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text('${weight.toStringAsFixed(1)} kg',
-                                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                                  const SizedBox(width: 8),
-                                  if (diff != null)
-                                    Text(
-                                      diff > 0 ? '+${diff.toStringAsFixed(1)}' : diff.toStringAsFixed(1),
-                                      style: TextStyle(
-                                        color: diff > 0 ? Colors.red.shade300 : Colors.green.shade400,
-                                        fontSize: 12, fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  const Spacer(),
-                                  GestureDetector(
-                                    onTap: () => _deleteWeightLog(row['id'] as int),
-                                    child: const Icon(Icons.close, color: Colors.white12, size: 18),
-                                  ),
-                                ],
-                              ),
+                          return Dismissible(
+                            key: Key('weight_${row['id']}'),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              color: Colors.red.shade900.withOpacity(0.5),
+                              child: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
                             ),
-                          ],
-                        );
-                      }).toList();
-                    }(),
+                            onDismissed: (_) => _deleteWeightLog(row['id'] as int),
+                            child: Column(
+                              children: [
+                                if (i > 0)
+                                  Container(
+                                    margin: const EdgeInsets.only(left: 54),
+                                    height: 0.5,
+                                    color: Colors.white.withOpacity(0.05),
+                                  ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 38,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(dateStr, style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w600)),
+                                            Text(timeStr, style: const TextStyle(color: Colors.white24, fontSize: 11)),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text('${weight.toStringAsFixed(1)} kg',
+                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                                      const SizedBox(width: 8),
+                                      if (diff != null)
+                                        Text(
+                                          diff > 0 ? '+${diff.toStringAsFixed(1)}' : diff.toStringAsFixed(1),
+                                          style: TextStyle(
+                                            color: diff > 0 ? Colors.red.shade300 : Colors.green.shade400,
+                                            fontSize: 12, fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      const Spacer(),
+                                      const Icon(Icons.chevron_left, color: Colors.white12, size: 16),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList();
+                      }(),
+                    ),
                   ),
                 ),
               ] else ...[
