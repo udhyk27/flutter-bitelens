@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bitelens/screens/profile_screen.dart';
 import 'package:bitelens/screens/result_screen.dart';
 import 'package:bitelens/screens/settings_screen.dart';
@@ -6,6 +8,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late CameraController controller;
   bool _isInitialized = false;
+  bool _cameraPermissionDenied = false;
   bool _isProfileSet = false;
   int _todayCalories = 0;
   double? _tdee;
@@ -43,7 +47,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     controller.initialize().then((_) {
       if (!mounted) return;
       setState(() => _isInitialized = true);
-    }).catchError((Object e) {});
+    }).catchError((Object e) {
+      if (!mounted) return;
+      if (e is CameraException) {
+        const deniedCodes = [
+          'CameraAccessDenied',
+          'CameraAccessDeniedWithoutPrompt',
+          'CameraAccessRestricted',
+          'AudioAccessDenied',
+          'AudioAccessDeniedWithoutPrompt',
+        ];
+        if (deniedCodes.contains(e.code)) {
+          setState(() => _cameraPermissionDenied = true);
+          return;
+        }
+      }
+      debugPrint('카메라 초기화 오류: $e');
+    });
 
     _checkProfileSet();
     _loadTodayStats();
@@ -54,6 +74,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     controller.dispose();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openAppSettings() async {
+    final uri = Platform.isIOS
+        ? Uri.parse('app-settings:')
+        : Uri.parse('package:com.aiid.bitelens.bitelens');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
   }
 
   Future<void> _checkProfileSet() async {
@@ -119,7 +148,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       drawer: _buildDrawer(),
 
-      body: _isInitialized
+      body: _cameraPermissionDenied
+          ? _CameraPermissionDeniedView(onOpenSettings: _openAppSettings)
+          : _isInitialized
           ? Stack(
         children: [
           Positioned.fill(child: CameraPreview(controller)),
@@ -466,6 +497,70 @@ class _TodayCalBanner extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+// ─── 카메라 권한 거부 안내 ─────────────────────────────────────────────
+
+class _CameraPermissionDeniedView extends StatelessWidget {
+  final VoidCallback onOpenSettings;
+  const _CameraPermissionDeniedView({required this.onOpenSettings});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 36),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.no_photography_outlined, color: Colors.white30, size: 36),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              '카메라 권한이 필요해요',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.',
+              style: TextStyle(color: Colors.white38, fontSize: 14, height: 1.7),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 36),
+            GestureDetector(
+              onTap: onOpenSettings,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.deepOrange,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Text(
+                  '설정으로 이동',
+                  style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '설정 → 개인 정보 보호 → 카메라',
+              style: TextStyle(color: Colors.white24, fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }
