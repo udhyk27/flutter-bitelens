@@ -488,7 +488,7 @@ class _TodayCalBanner extends StatelessWidget {
             const SizedBox(height: 5),
             Text(
               isOver
-                  ? '${(-remaining!)} kcal 초과'
+                  ? '${(-remaining)} kcal 초과'
                   : '$remaining kcal 남음',
               style: TextStyle(
                 color: isOver ? Colors.red.shade300 : Colors.white38,
