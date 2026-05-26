@@ -627,7 +627,8 @@ class _FramePainter extends CustomPainter {
 }
 
 Uint8List _convertToJpeg(Uint8List bytes) {
-  final decoded = img.decodeImage(bytes)!;
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) throw Exception('이미지 디코딩에 실패했습니다. 지원하지 않는 형식일 수 있습니다.');
   final jpeg = img.JpegEncoder().encode(decoded);
   return Uint8List.fromList(jpeg);
 }

@@ -354,7 +354,7 @@ class NutritionParser {
   }
 
   static String mealType(String isoDate) {
-    final hour = DateTime.parse(isoDate).toLocal().hour;
+    final hour = (DateTime.tryParse(isoDate) ?? DateTime.now()).toLocal().hour;
     if (hour >= 5 && hour < 10) return '아침';
     if (hour >= 10 && hour < 14) return '점심';
     if (hour >= 14 && hour < 18) return '간식';
