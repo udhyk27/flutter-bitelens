@@ -29,8 +29,12 @@ Future<void> main() async {
     appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
   );
 
-  _cameras = await availableCameras();
-  Api().getRemoteConfig();
+  try {
+    _cameras = await availableCameras();
+  } catch (e) {
+    _cameras = <CameraDescription>[];
+    debugPrint('카메라 목록 조회 실패: $e');
+  }
 
   runApp(const MyApp());
 }
@@ -72,7 +76,12 @@ class _AnimatedSplashState extends State<AnimatedSplash> {
 
   Future<void> _initializeData() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 2500));
+      // 스플래시 최소 노출 시간과 Remote Config 로드를 병렬 처리
+      // → 홈 진입 시점에 store/약관 URL, ai_model 값이 준비됨
+      await Future.wait([
+        Future.delayed(const Duration(milliseconds: 2500)),
+        Api().getRemoteConfig(),
+      ]);
 
       final prefs = await SharedPreferences.getInstance();
       final onboardingDone = prefs.getBool('onboarding_done') ?? false;

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -59,6 +62,43 @@ class DatabaseHelper {
     );
   }
 
+  // ─── 이미지 파일 영구 저장 ────────────────────────────────
+
+  /// 히스토리 이미지 저장 디렉터리 (앱 전용 문서 영역)
+  Future<Directory> _imageDir() async {
+    final base = await getApplicationDocumentsDirectory();
+    final dir = Directory(join(base.path, 'history_images'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// 임시/캐시 경로의 이미지를 앱 전용 디렉터리로 복사해 영구 보관.
+  /// 복사 실패 시 원본 경로를 그대로 반환(최소한 기록은 남김).
+  Future<String> _persistImage(String srcPath) async {
+    try {
+      final src = File(srcPath);
+      if (!await src.exists()) return srcPath;
+      final dir = await _imageDir();
+      final ext = extension(srcPath).isNotEmpty ? extension(srcPath) : '.jpg';
+      final dest = join(dir.path, '${DateTime.now().microsecondsSinceEpoch}$ext');
+      await src.copy(dest);
+      return dest;
+    } catch (_) {
+      return srcPath;
+    }
+  }
+
+  /// 우리가 복사한 히스토리 이미지에 한해 파일 삭제(사용자 갤러리 원본은 건드리지 않음).
+  Future<void> _deleteImageFile(String? path) async {
+    if (path == null) return;
+    try {
+      final dir = await _imageDir();
+      if (!isWithin(dir.path, path)) return;
+      final f = File(path);
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
+  }
+
   // ─── analysis_history ────────────────────────────────────
 
   Future<int> insertAnalysis({
@@ -66,8 +106,9 @@ class DatabaseHelper {
     required String result,
   }) async {
     final db = await database;
+    final persistedPath = await _persistImage(imagePath);
     return await db.insert('analysis_history', {
-      'image_path': imagePath,
+      'image_path': persistedPath,
       'result': result,
       'created_at': DateTime.now().toIso8601String(),
       'is_favorite': 0,
@@ -133,11 +174,24 @@ class DatabaseHelper {
 
   Future<void> deleteAnalysis(int id) async {
     final db = await database;
+    final rows = await db.query(
+      'analysis_history',
+      columns: ['image_path'],
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (rows.isNotEmpty) {
+      await _deleteImageFile(rows.first['image_path'] as String?);
+    }
     await db.delete('analysis_history', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> clearAll() async {
     final db = await database;
+    final rows = await db.query('analysis_history', columns: ['image_path']);
+    for (final r in rows) {
+      await _deleteImageFile(r['image_path'] as String?);
+    }
     await db.delete('analysis_history');
   }
 

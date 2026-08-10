@@ -106,8 +106,9 @@ exports.analyzeFood = onRequest(
       res.json({ result: result.response.text() });
 
     } catch (e) {
+      // 내부 오류 상세는 서버 로그에만 남기고, 클라이언트에는 일반 메시지만 반환
       console.error(e);
-      res.status(500).json({ error: e.message });
+      res.status(500).json({ error: "분석 중 오류가 발생했습니다." });
     }
   }
 );

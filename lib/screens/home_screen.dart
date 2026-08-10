@@ -20,7 +20,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  late CameraController controller;
+  CameraController? controller;
   bool _isInitialized = false;
   bool _cameraPermissionDenied = false;
   bool _isProfileSet = false;
@@ -43,8 +43,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    controller = CameraController(widget.cameras[0], ResolutionPreset.max, enableAudio: false);
-    controller.initialize().then((_) {
+    if (widget.cameras.isEmpty) {
+      // 사용 가능한 카메라가 없는 기기 → 크래시 방지
+      _cameraPermissionDenied = true;
+    } else {
+      _initCamera();
+    }
+
+    _checkProfileSet();
+    _loadTodayStats();
+  }
+
+  void _initCamera() {
+    final cam = CameraController(widget.cameras[0], ResolutionPreset.max, enableAudio: false);
+    controller = cam;
+    cam.initialize().then((_) {
       if (!mounted) return;
       setState(() => _isInitialized = true);
     }).catchError((Object e) {
@@ -64,14 +77,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
       debugPrint('카메라 초기화 오류: $e');
     });
-
-    _checkProfileSet();
-    _loadTodayStats();
   }
 
   @override
   void dispose() {
-    controller.dispose();
+    controller?.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -153,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           : _isInitialized
           ? Stack(
         children: [
-          Positioned.fill(child: CameraPreview(controller)),
+          Positioned.fill(child: CameraPreview(controller!)),
           Positioned(
             top: 0, left: 0, right: 0, height: 160,
             child: Container(
@@ -312,9 +322,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _takePicture() async {
-    if (!controller.value.isInitialized || controller.value.isTakingPicture) return;
+    final cam = controller;
+    if (cam == null || !cam.value.isInitialized || cam.value.isTakingPicture) return;
     try {
-      final XFile image = await controller.takePicture();
+      final XFile image = await cam.takePicture();
       if (!mounted) return;
       await Navigator.push(context, MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)));
       _loadTodayStats();

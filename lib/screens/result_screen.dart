@@ -102,6 +102,10 @@ class _ResultScreenState extends State<ResultScreen>
 
     try {
       final rawBytes = await File(widget.imagePath).readAsBytes();
+      if (rawBytes.length < 3) {
+        _setError('이미지를 읽을 수 없습니다. 다른 사진을 사용해주세요.');
+        return;
+      }
       final isJpeg = rawBytes[0] == 0xFF && rawBytes[1] == 0xD8 && rawBytes[2] == 0xFF;
       final imageBytes = isJpeg
           ? rawBytes

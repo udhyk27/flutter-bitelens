@@ -87,7 +87,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final height = double.tryParse(_heightController.text);
     final weight = double.tryParse(_weightController.text);
 
-    if (age == null || height == null || weight == null || height == 0) {
+    // 현실적 범위를 벗어난 입력은 계산하지 않음(극단값으로 인한 왜곡 방지)
+    final valid = age != null &&
+        height != null &&
+        weight != null &&
+        age >= 1 && age <= 120 &&
+        height >= 50 && height <= 250 &&
+        weight >= 2 && weight <= 400;
+
+    if (!valid) {
       setState(() { _bmi = null; _bmr = null; _tdee = null; });
       return;
     }
@@ -108,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _addWeightLog() async {
     final raw = _logWeightController.text.trim().replaceAll(',', '.');
     final val = double.tryParse(raw);
-    if (val == null || val <= 0) return;
+    if (val == null || val < 2 || val > 400) return;
     await DatabaseHelper.instance.insertWeight(val);
     _logWeightController.clear();
     await _loadWeightLog();
