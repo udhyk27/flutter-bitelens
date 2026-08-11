@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:bitelens/models/food_analysis.dart';
 import 'package:bitelens/services/database_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -317,40 +318,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
 // ─── 영양소 파서 ──────────────────────────────────────────────────────
 
+/// 화면에서 쓰는 얇은 접근자. 실제 파싱은 [FoodAnalysis]가 담당하며,
+/// JSON(신규)·자연어(레거시) 두 저장 포맷을 모두 투명하게 처리한다.
 class NutritionParser {
-  static String? parse(String result, String key) {
-    for (final line in result.split('\n')) {
-      if (line.contains(key)) {
-        final parts = line.split(':');
-        if (parts.length > 1) {
-          String val = parts[1].trim();
-          if (val.contains('(')) val = val.substring(0, val.indexOf('(')).trim();
-          return val.isEmpty ? null : val;
-        }
-      }
-    }
-    return null;
-  }
+  static String foodName(String result) =>
+      FoodAnalysis.parse(result).foodName ?? '음식';
+  static String calories(String result) =>
+      FoodAnalysis.parse(result).caloriesText ?? '-';
+  static String carbs(String result) =>
+      FoodAnalysis.parse(result).carbsText ?? '-';
+  static String protein(String result) =>
+      FoodAnalysis.parse(result).proteinText ?? '-';
+  static String fat(String result) => FoodAnalysis.parse(result).fatText ?? '-';
+  static String sodium(String result) =>
+      FoodAnalysis.parse(result).sodiumText ?? '-';
+  static String fiber(String result) =>
+      FoodAnalysis.parse(result).fiberText ?? '-';
 
-  static String foodName(String result) => parse(result, '음식 이름') ?? '음식';
-  static String calories(String result) => parse(result, '칼로리') ?? parse(result, '예상 칼로리') ?? '-';
-  static String carbs(String result) => parse(result, '탄수화물') ?? '-';
-  static String protein(String result) => parse(result, '단백질') ?? '-';
-  static String fat(String result) => parse(result, '지방') ?? '-';
-  static String sodium(String result) => parse(result, '나트륨') ?? '-';
-  static String fiber(String result) => parse(result, '식이섬유') ?? '-';
-
-  static int? parseCaloriesInt(String result) {
-    final raw = calories(result);
-    final match = RegExp(r'(\d+)').firstMatch(raw);
-    return match != null ? int.tryParse(match.group(1)!) : null;
-  }
+  static int? parseCaloriesInt(String result) =>
+      FoodAnalysis.parse(result).calories;
 
   static double? parseGrams(String result, String key) {
-    final raw = parse(result, key);
-    if (raw == null) return null;
-    final match = RegExp(r'([\d.]+)').firstMatch(raw);
-    return match != null ? double.tryParse(match.group(1)!) : null;
+    final a = FoodAnalysis.parse(result);
+    switch (key) {
+      case '탄수화물':
+        return a.carbs;
+      case '단백질':
+        return a.protein;
+      case '지방':
+        return a.fat;
+      case '나트륨':
+        return a.sodium;
+      case '식이섬유':
+        return a.fiber;
+    }
+    return null;
   }
 
   static String mealType(String isoDate) {
@@ -653,7 +655,8 @@ class _HistoryCard extends StatelessWidget {
                         onPressed: () async {
                           try {
                             await Share.shareXFiles([XFile(imagePath)],
-                                text: result, subject: 'BiteLens 음식 분석 결과');
+                                text: FoodAnalysis.parse(result).displayText,
+                                subject: 'BiteLens 음식 분석 결과');
                           } catch (e) { debugPrint('공유 오류: $e'); }
                         },
                       ),
@@ -697,7 +700,7 @@ class _HistoryCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.white.withOpacity(0.07)),
                       ),
-                      child: Text(result,
+                      child: Text(FoodAnalysis.parse(result).displayText,
                           style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.8)),
                     ),
                   ],

@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image/image.dart' as img;
 import 'dart:typed_data';
 
+import '../models/food_analysis.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
 
@@ -26,6 +27,7 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen>
     with TickerProviderStateMixin {
   String _result = '';
+  FoodAnalysis? _analysis;
   bool _isLoading = true;
   double? _tdee;
 
@@ -62,22 +64,6 @@ class _ResultScreenState extends State<ResultScreen>
     _scanController.dispose();
     _fadeController.dispose();
     super.dispose();
-  }
-
-  /// 칼로리 또는 영양소 정보가 하나라도 있으면 true
-  bool _checkHasNutrition(String result) {
-    // 칼로리 체크
-    if (_parseCaloriesFromResult(result) != null) return true;
-    // 영양소 체크
-    for (final key in ['탄수화물', '단백질', '지방']) {
-      for (final line in result.split('\n')) {
-        if (line.contains(key)) {
-          final parts = line.split(':');
-          if (parts.length > 1 && parts[1].trim().isNotEmpty) return true;
-        }
-      }
-    }
-    return false;
   }
 
   Future<void> _analyzeFood() async {
@@ -127,15 +113,18 @@ class _ResultScreenState extends State<ResultScreen>
         appCheckToken: appCheckToken,
       );
 
+      final analysis = FoodAnalysis.parse(result);
+
       setState(() {
         _result = result;
+        _analysis = analysis;
         _isLoading = false;
       });
 
       _scanController.stop();
       _fadeController.forward();
 
-      if (saveHistory && _checkHasNutrition(_result)) {
+      if (saveHistory && analysis.hasNutrition) {
         await DatabaseHelper.instance.insertAnalysis(
           imagePath: widget.imagePath,
           result: _result,
@@ -204,16 +193,9 @@ class _ResultScreenState extends State<ResultScreen>
     throw Exception('분석에 실패했습니다.');
   }
 
-  int? _parseCaloriesFromResult(String result) {
-    final pattern = RegExp(r'(\d{2,4})\s*(?:kcal|칼로리|cal)', caseSensitive: false);
-    final match = pattern.firstMatch(result);
-    if (match != null) return int.tryParse(match.group(1)!);
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final parsedCalories = _isLoading ? null : _parseCaloriesFromResult(_result);
+    final parsedCalories = _isLoading ? null : _analysis?.calories;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -378,13 +360,15 @@ class _ResultScreenState extends State<ResultScreen>
                         border: Border.all(color: Colors.white.withOpacity(0.07)),
                       ),
                       child: Text(
-                        _result,
+                        _analysis?.displayText ?? _result,
                         style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.8, letterSpacing: 0.3),
                       ),
                     ),
 
-                    const SizedBox(height: 12),
-                    _NutritionCard(result: _result),
+                    if (_analysis != null) ...[
+                      const SizedBox(height: 12),
+                      _NutritionCard(analysis: _analysis!),
+                    ],
 
                     if (_tdee != null)
                       _TdeeBanner(tdee: _tdee!, parsedCalories: parsedCalories),
@@ -451,7 +435,7 @@ class _ResultScreenState extends State<ResultScreen>
     try {
       await Share.shareXFiles(
         [XFile(widget.imagePath)],
-        text: _result,
+        text: _analysis?.displayText ?? _result,
         subject: 'BiteLens 음식 분석 결과',
       );
     } catch (e) {
@@ -640,41 +624,20 @@ Uint8List _convertToJpeg(Uint8List bytes) {
 // ─── 영양소 시각화 카드 ───────────────────────────────────────────────
 
 class _NutritionCard extends StatelessWidget {
-  final String result;
-  const _NutritionCard({required this.result});
-
-  String? _parse(String key) {
-    for (final line in result.split('\n')) {
-      if (line.contains(key)) {
-        final parts = line.split(':');
-        if (parts.length > 1) {
-          String val = parts[1].trim();
-          if (val.contains('(')) val = val.substring(0, val.indexOf('(')).trim();
-          return val.isEmpty ? null : val;
-        }
-      }
-    }
-    return null;
-  }
-
-  double? _parseG(String key) {
-    final raw = _parse(key);
-    if (raw == null) return null;
-    final m = RegExp(r'([\d.]+)').firstMatch(raw);
-    return m != null ? double.tryParse(m.group(1)!) : null;
-  }
+  final FoodAnalysis analysis;
+  const _NutritionCard({required this.analysis});
 
   @override
   Widget build(BuildContext context) {
-    final carbsStr = _parse('탄수화물') ?? '-';
-    final proteinStr = _parse('단백질') ?? '-';
-    final fatStr = _parse('지방') ?? '-';
-    final sodiumStr = _parse('나트륨');
-    final fiberStr = _parse('식이섬유');
+    final carbsStr = analysis.carbsText ?? '-';
+    final proteinStr = analysis.proteinText ?? '-';
+    final fatStr = analysis.fatText ?? '-';
+    final sodiumStr = analysis.sodiumText;
+    final fiberStr = analysis.fiberText;
 
-    final carbs = _parseG('탄수화물') ?? 0;
-    final protein = _parseG('단백질') ?? 0;
-    final fat = _parseG('지방') ?? 0;
+    final carbs = analysis.carbs ?? 0;
+    final protein = analysis.protein ?? 0;
+    final fat = analysis.fat ?? 0;
     final total = carbs + protein + fat;
 
     if (carbsStr == '-' && proteinStr == '-' && fatStr == '-') return const SizedBox.shrink();

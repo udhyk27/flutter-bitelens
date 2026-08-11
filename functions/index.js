@@ -34,75 +34,60 @@ exports.analyzeFood = onRequest(
     try {
       const { imageBase64, detailedAnalysis, language, aiModel } = req.body;
 
+      if (typeof imageBase64 !== "string" || imageBase64.length === 0) {
+        res.status(400).json({ error: "이미지 데이터가 필요합니다." });
+        return;
+      }
+
+      // ── 구조화 출력 스키마 ─────────────────────────────────────────────
+      // Gemini가 자연어 대신 정해진 JSON을 반환하도록 강제한다.
+      // 단위: calories=kcal(정수), 탄수화물/단백질/지방/식이섬유=g, 나트륨=mg
+      const properties = {
+        foodName: { type: "string" },
+        calories: { type: "integer" },
+        carbohydrates: { type: "number" },
+        protein: { type: "number" },
+        fat: { type: "number" },
+        note: { type: "string" },
+      };
+      const required = ["foodName", "calories", "carbohydrates", "protein", "fat"];
+      if (detailedAnalysis) {
+        properties.sodium = { type: "number" };
+        properties.fiber = { type: "number" };
+      }
+
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY.value());
       const model = genAI.getGenerativeModel({
         model: aiModel || "gemini-2.5-flash-lite",
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: { type: "object", properties, required },
+        },
       });
 
-      const basePrompt = {
-        '한국어': detailedAnalysis
-          ? `이 음식 사진을 최대한 정밀하게 분석해줘.
-             음식 이름:
-             예상 칼로리:
-             주요 영양소:
-             - 탄수화물:
-             - 단백질:
-             - 지방:
-             - 나트륨:
-             - 식이섬유:
-             추가 정보: 재료, 조리법, 혈당지수(GI) 등 상세하게`
-          : `이 음식 사진을 분석해줘. 다음 형식으로 답해줘:
-             음식 이름:
-             예상 칼로리:
-             주요 영양소:
-             - 탄수화물:
-             - 단백질:
-             - 지방:`,
+      const langName =
+        { "한국어": "Korean", "English": "English", "日本語": "Japanese" }[
+          language ?? "한국어"
+        ] || "Korean";
 
-        'English': detailedAnalysis
-          ? `Analyze this food photo in detail.
-             Food name:
-             Estimated calories:
-             Main nutrients:
-             - Carbohydrates:
-             - Protein:
-             - Fat:
-             - Sodium:
-             - Dietary fiber:
-             Additional info: ingredients, cooking method, glycemic index (GI), etc.`
-          : `Analyze this food photo. Reply in this format:
-             Food name:
-             Estimated calories:
-             Main nutrients:
-             - Carbohydrates:
-             - Protein:
-             - Fat:`,
-
-        '日本語': detailedAnalysis
-          ? `この料理の写真を詳しく分析してください。
-             料理名：
-             推定カロリー：
-             主な栄養素：
-             - 炭水化物：
-             - タンパク質：
-             - 脂質：
-             - ナトリウム：
-             - 食物繊維：
-             追加情報：材料、調理法、グリセミック指数（GI）など`
-          : `この料理の写真を分析してください。次の形式で答えてください：
-             料理名：
-             推定カロリー：
-             主な栄養素：
-             - 炭水化物：
-             - タンパク質：
-             - 脂質：`,
-      }[language ?? '한국어'];
+      const prompt =
+        `You are a nutrition analysis assistant. Analyze the food in this photo and ` +
+        `fill the provided JSON schema. Units: calories in kcal (integer); ` +
+        `carbohydrates, protein, fat${detailedAnalysis ? ", fiber" : ""} in grams` +
+        `${detailedAnalysis ? "; sodium in milligrams" : ""}. ` +
+        `Estimate for a single typical serving shown in the photo. ` +
+        `Write "foodName" and ${detailedAnalysis
+          ? 'a detailed "note" (key ingredients, cooking method, glycemic index, etc.)'
+          : 'a brief one-line "note"'} in ${langName}. ` +
+        `If a value is uncertain, provide your best numeric estimate. ` +
+        `If the image does not contain food, set foodName accordingly and use 0 for the numbers.`;
 
       const result = await model.generateContent([
         { inlineData: { data: imageBase64, mimeType: "image/jpeg" } },
-        { text: basePrompt },
+        { text: prompt },
       ]);
 
+      // 클라이언트는 result 문자열을 JSON으로 파싱한다(FoodAnalysis.parse).
       res.json({ result: result.response.text() });
 
     } catch (e) {
