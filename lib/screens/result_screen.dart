@@ -27,7 +27,11 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen>
     with TickerProviderStateMixin {
   String _result = '';
-  FoodAnalysis? _analysis;
+  FoodAnalysis? _analysis; // 현재 표시값(배수 반영)
+  FoodAnalysis? _baseAnalysis; // AI 추정 1인분 기준값
+  double _portion = 1.0; // 먹은 양 배수
+  int? _savedId; // 저장된 히스토리 row id (배수 변경 시 갱신)
+  bool _saveHistory = true;
   bool _isLoading = true;
   double? _tdee;
 
@@ -83,6 +87,7 @@ class _ResultScreenState extends State<ResultScreen>
     }
 
     final saveHistory = prefs.getBool('save_history') ?? true;
+    _saveHistory = saveHistory;
     final detailedAnalysis = prefs.getBool('detailed_analysis') ?? false;
     final language = prefs.getString('response_language') ?? '한국어';
 
@@ -113,10 +118,11 @@ class _ResultScreenState extends State<ResultScreen>
         appCheckToken: appCheckToken,
       );
 
-      final analysis = FoodAnalysis.parse(result);
+      final analysis = FoodAnalysis.parse(result); // 1인분 기준
 
       setState(() {
         _result = result;
+        _baseAnalysis = analysis;
         _analysis = analysis;
         _isLoading = false;
       });
@@ -125,9 +131,9 @@ class _ResultScreenState extends State<ResultScreen>
       _fadeController.forward();
 
       if (saveHistory && analysis.hasNutrition) {
-        await DatabaseHelper.instance.insertAnalysis(
+        _savedId = await DatabaseHelper.instance.insertAnalysis(
           imagePath: widget.imagePath,
-          result: _result,
+          result: analysis.toJsonString(),
         );
       }
     } on SocketException {
@@ -145,6 +151,21 @@ class _ResultScreenState extends State<ResultScreen>
     setState(() { _result = msg; _isLoading = false; });
     _scanController.stop();
     _fadeController.forward();
+  }
+
+  /// 먹은 양(배수) 변경 → 표시값 재계산 및 저장된 기록 갱신
+  Future<void> _setPortion(double factor) async {
+    final base = _baseAnalysis;
+    if (base == null || factor == _portion) return;
+    setState(() {
+      _portion = factor;
+      _analysis = base.scale(factor);
+    });
+    final id = _savedId;
+    if (id != null && _saveHistory) {
+      await DatabaseHelper.instance
+          .updateAnalysisResult(id, base.scale(factor).toJsonString());
+    }
   }
 
   /// 최대 3회 재시도 (지수 백오프)
@@ -364,6 +385,11 @@ class _ResultScreenState extends State<ResultScreen>
                         style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.8, letterSpacing: 0.3),
                       ),
                     ),
+
+                    if (_analysis != null && _analysis!.hasNutrition) ...[
+                      const SizedBox(height: 12),
+                      _PortionSelector(selected: _portion, onChanged: _setPortion),
+                    ],
 
                     if (_analysis != null) ...[
                       const SizedBox(height: 12),
@@ -622,6 +648,86 @@ Uint8List _convertToJpeg(Uint8List bytes) {
 }
 
 // ─── 영양소 시각화 카드 ───────────────────────────────────────────────
+
+// ─── 먹은 양(1인분 배수) 선택기 ──────────────────────────────────────
+
+class _PortionSelector extends StatelessWidget {
+  final double selected;
+  final ValueChanged<double> onChanged;
+  const _PortionSelector({required this.selected, required this.onChanged});
+
+  static const List<double> _options = [0.5, 1.0, 1.5, 2.0, 3.0];
+
+  static String _num(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+
+  String _label(double v) => '×${_num(v)}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.07)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.restaurant_outlined, color: Colors.deepOrange, size: 15),
+              const SizedBox(width: 8),
+              const Text('먹은 양',
+                  style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 0.5)),
+              const Spacer(),
+              Text(
+                selected == 1.0 ? '1인분 기준' : '${_num(selected)}인분',
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: _options.map((v) {
+              final isSel = v == selected;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: GestureDetector(
+                    onTap: () => onChanged(v),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSel ? Colors.deepOrange : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSel ? Colors.deepOrange : Colors.white.withOpacity(0.08),
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _label(v),
+                          style: TextStyle(
+                            color: isSel ? Colors.white : Colors.white54,
+                            fontSize: 13,
+                            fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _NutritionCard extends StatelessWidget {
   final FoodAnalysis analysis;

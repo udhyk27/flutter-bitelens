@@ -338,6 +338,8 @@ class NutritionParser {
   static int? parseCaloriesInt(String result) =>
       FoodAnalysis.parse(result).calories;
 
+  static double portion(String result) => FoodAnalysis.parse(result).portion;
+
   static double? parseGrams(String result, String key) {
     final a = FoodAnalysis.parse(result);
     switch (key) {
@@ -517,6 +519,7 @@ class _HistoryCard extends StatelessWidget {
     final fat = NutritionParser.fat(result);
     final meal = NutritionParser.mealType(createdAt);
     final mealColor = NutritionParser.mealColor(createdAt);
+    final portion = NutritionParser.portion(result);
 
     return GestureDetector(
       onTap: () => _showDetailSheet(context),

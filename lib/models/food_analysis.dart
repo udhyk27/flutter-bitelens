@@ -18,6 +18,9 @@ class FoodAnalysis {
   final double? fiber; // g
   final String? note;
 
+  /// 먹은 양 배수 (1.0 = AI가 추정한 1인분 기준). 숫자 필드에는 이미 반영돼 있음.
+  final double portion;
+
   // 표시용 문자열 (레거시는 원문 유지, JSON은 포맷 결과)
   final String? caloriesText;
   final String? carbsText;
@@ -44,6 +47,7 @@ class FoodAnalysis {
     this.fatText,
     this.sodiumText,
     this.fiberText,
+    this.portion = 1.0,
     String? rawFallback,
   }) : _rawFallback = rawFallback;
 
@@ -68,6 +72,7 @@ class FoodAnalysis {
     if (sodiumText != null && sodiumText != '-') macros.add('나트륨 $sodiumText');
     if (fiberText != null && fiberText != '-') macros.add('식이섬유 $fiberText');
     if (macros.isNotEmpty) b.writeln(macros.join(' · '));
+    if (portion != 1.0) b.writeln('먹은 양: ${_fmt(portion)}인분');
     if (note != null && note!.isNotEmpty) {
       b.writeln();
       b.writeln(note);
@@ -75,6 +80,50 @@ class FoodAnalysis {
     final out = b.toString().trim();
     return out.isEmpty ? '분석 결과를 표시할 수 없습니다.' : out;
   }
+
+  // ─── 양 조절 / 직렬화 ────────────────────────────────────
+
+  /// 1인분 기준(this)에서 [factor]배 만큼 스케일한 새 인스턴스.
+  /// 숫자 필드를 곱하고 표시 문자열을 재생성하며 [portion]에 배수를 기록한다.
+  /// (this는 1인분 기준이어야 하며, 스케일 결과를 다시 스케일하지 말 것)
+  FoodAnalysis scale(double factor) {
+    double? m(double? v) => v == null ? null : v * factor;
+    final cal = calories == null ? null : (calories! * factor).round();
+    final c = m(carbs), p = m(protein), f = m(fat);
+    final na = m(sodium), fi = m(fiber);
+    return FoodAnalysis(
+      foodName: foodName,
+      calories: cal,
+      carbs: c,
+      protein: p,
+      fat: f,
+      sodium: na,
+      fiber: fi,
+      note: note,
+      portion: factor,
+      caloriesText: cal != null ? '$cal kcal' : '-',
+      carbsText: _grams(c),
+      proteinText: _grams(p),
+      fatText: _grams(f),
+      sodiumText: na != null ? '${_fmt(na)}mg' : null,
+      fiberText: fi != null ? _grams(fi) : null,
+    );
+  }
+
+  /// DB의 `result` 컬럼에 저장할 JSON. [parse]로 그대로 복원된다.
+  Map<String, dynamic> toJson() => {
+        if (foodName != null) 'foodName': foodName,
+        if (calories != null) 'calories': calories,
+        if (carbs != null) 'carbohydrates': carbs,
+        if (protein != null) 'protein': protein,
+        if (fat != null) 'fat': fat,
+        if (sodium != null) 'sodium': sodium,
+        if (fiber != null) 'fiber': fiber,
+        if (note != null) 'note': note,
+        'portion': portion,
+      };
+
+  String toJsonString() => jsonEncode(toJson());
 
   // ─── 파싱 진입점 ─────────────────────────────────────────
 
@@ -120,6 +169,7 @@ class FoodAnalysis {
 
     final name = (j['foodName'] as Object?)?.toString().trim();
     final note = (j['note'] as Object?)?.toString().trim();
+    final portion = toD(j['portion']);
 
     return FoodAnalysis(
       foodName: (name == null || name.isEmpty) ? null : name,
@@ -130,6 +180,7 @@ class FoodAnalysis {
       sodium: sodium,
       fiber: fiber,
       note: (note == null || note.isEmpty) ? null : note,
+      portion: (portion == null || portion <= 0) ? 1.0 : portion,
       caloriesText: cal != null ? '$cal kcal' : '-',
       carbsText: _grams(carbs),
       proteinText: _grams(protein),

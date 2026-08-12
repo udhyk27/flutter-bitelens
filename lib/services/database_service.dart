@@ -115,6 +115,17 @@ class DatabaseHelper {
     });
   }
 
+  /// 기존 기록의 분석 결과(result) 갱신 — 먹은 양(배수) 변경 반영용
+  Future<void> updateAnalysisResult(int id, String result) async {
+    final db = await database;
+    await db.update(
+      'analysis_history',
+      {'result': result},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   /// 전체 기록 조회 (기존 코드 호환용)
   Future<List<Map<String, dynamic>>> getAnalysisHistory() async {
     final db = await database;
