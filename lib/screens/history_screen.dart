@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bitelens/models/food_analysis.dart';
 import 'package:bitelens/services/database_service.dart';
+import 'package:bitelens/widgets/analysis_edit_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -86,6 +87,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _history.removeWhere((e) => e['id'] == id);
     final weekly = await DatabaseHelper.instance.getWeeklyHistory();
     setState(() { _weeklyData = weekly; });
+  }
+
+  Future<void> _editItem(Map<String, dynamic> item) async {
+    final id = item['id'] as int;
+    final result = item['result'] as String;
+    final createdAt = item['created_at'] as String;
+    final analysis = FoodAnalysis.parse(result);
+    final meal = (item['meal'] as String?) ?? NutritionParser.mealType(createdAt);
+
+    final res = await showAnalysisEditSheet(context, analysis: analysis, meal: meal);
+    if (res == null || !mounted) return;
+
+    final newResult = res.analysis.toJsonString();
+    await DatabaseHelper.instance
+        .updateAnalysis(id, result: newResult, meal: res.meal);
+
+    final idx = _history.indexWhere((e) => e['id'] == id);
+    if (idx != -1) {
+      final updated = Map<String, dynamic>.from(_history[idx]);
+      updated['result'] = newResult;
+      updated['meal'] = res.meal;
+      setState(() => _history[idx] = updated);
+    }
+    final weekly = await DatabaseHelper.instance.getWeeklyHistory();
+    if (mounted) setState(() { _weeklyData = weekly; });
   }
 
   Future<void> _toggleFavorite(int id, bool current) async {
@@ -253,8 +279,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         result: item['result'] as String,
                         time: _timeLabel(item['created_at'] as String),
                         createdAt: item['created_at'] as String,
+                        meal: item['meal'] as String?,
                         isFavorite: (item['is_favorite'] as int? ?? 0) == 1,
                         onDelete: () => _showDeleteDialog(item['id'] as int),
+                        onEdit: () => _editItem(item),
                         onFavoriteToggle: () => _toggleFavorite(
                           item['id'] as int,
                           (item['is_favorite'] as int? ?? 0) == 1,
@@ -357,24 +385,10 @@ class NutritionParser {
     return null;
   }
 
-  static String mealType(String isoDate) {
-    final hour = (DateTime.tryParse(isoDate) ?? DateTime.now()).toLocal().hour;
-    if (hour >= 5 && hour < 10) return '아침';
-    if (hour >= 10 && hour < 14) return '점심';
-    if (hour >= 14 && hour < 18) return '간식';
-    if (hour >= 18 && hour < 22) return '저녁';
-    return '야식';
-  }
+  static String mealType(String isoDate) =>
+      mealForDate(DateTime.tryParse(isoDate) ?? DateTime.now());
 
-  static Color mealColor(String isoDate) {
-    switch (mealType(isoDate)) {
-      case '아침': return Colors.orange.shade300;
-      case '점심': return Colors.blue.shade300;
-      case '간식': return Colors.purple.shade300;
-      case '저녁': return Colors.teal.shade300;
-      default: return Colors.grey.shade500;
-    }
-  }
+  static Color mealColor(String isoDate) => mealColorFor(mealType(isoDate));
 }
 
 // ─── 주간 칼로리 차트 ─────────────────────────────────────────────────
@@ -495,8 +509,10 @@ class _HistoryCard extends StatelessWidget {
   final String result;
   final String time;
   final String createdAt;
+  final String? meal;
   final bool isFavorite;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
   final VoidCallback onFavoriteToggle;
 
   const _HistoryCard({
@@ -505,8 +521,10 @@ class _HistoryCard extends StatelessWidget {
     required this.result,
     required this.time,
     required this.createdAt,
+    required this.meal,
     required this.isFavorite,
     required this.onDelete,
+    required this.onEdit,
     required this.onFavoriteToggle,
   });
 
@@ -517,8 +535,8 @@ class _HistoryCard extends StatelessWidget {
     final carbs = NutritionParser.carbs(result);
     final protein = NutritionParser.protein(result);
     final fat = NutritionParser.fat(result);
-    final meal = NutritionParser.mealType(createdAt);
-    final mealColor = NutritionParser.mealColor(createdAt);
+    final mealLabel = meal ?? NutritionParser.mealType(createdAt);
+    final mealColor = mealColorFor(mealLabel);
     final portion = NutritionParser.portion(result);
 
     return GestureDetector(
@@ -562,7 +580,7 @@ class _HistoryCard extends StatelessWidget {
                             color: mealColor.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(meal,
+                          child: Text(mealLabel,
                               style: TextStyle(color: mealColor, fontSize: 9, fontWeight: FontWeight.w600)),
                         ),
                         const SizedBox(width: 6),
@@ -669,18 +687,27 @@ class _HistoryCard extends StatelessWidget {
                   Container(width: 36, height: 4,
                       decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2))),
                   Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: IconButton(
-                        icon: const Icon(Icons.ios_share, color: Colors.white54, size: 20),
-                        onPressed: () async {
-                          try {
-                            await Share.shareXFiles([XFile(imagePath)],
-                                text: FoodAnalysis.parse(result).displayText,
-                                subject: 'BiteLens 음식 분석 결과');
-                          } catch (e) { debugPrint('공유 오류: $e'); }
-                        },
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, color: Colors.white54, size: 20),
+                          onPressed: () {
+                            Navigator.pop(context); // 상세 시트 닫고 편집 열기
+                            onEdit();
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.ios_share, color: Colors.white54, size: 20),
+                          onPressed: () async {
+                            try {
+                              await Share.shareXFiles([XFile(imagePath)],
+                                  text: FoodAnalysis.parse(result).displayText,
+                                  subject: 'BiteLens 음식 분석 결과');
+                            } catch (e) { debugPrint('공유 오류: $e'); }
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],

@@ -110,6 +110,37 @@ class FoodAnalysis {
     );
   }
 
+  /// 사용자 수동 입력값으로 인스턴스 생성(표시 문자열 자동 구성).
+  factory FoodAnalysis.manual({
+    String? foodName,
+    int? calories,
+    double? carbs,
+    double? protein,
+    double? fat,
+    double? sodium,
+    double? fiber,
+    String? note,
+    double portion = 1.0,
+  }) {
+    return FoodAnalysis(
+      foodName: (foodName == null || foodName.isEmpty) ? null : foodName,
+      calories: calories,
+      carbs: carbs,
+      protein: protein,
+      fat: fat,
+      sodium: sodium,
+      fiber: fiber,
+      note: (note == null || note.isEmpty) ? null : note,
+      portion: portion <= 0 ? 1.0 : portion,
+      caloriesText: calories != null ? '$calories kcal' : '-',
+      carbsText: _grams(carbs),
+      proteinText: _grams(protein),
+      fatText: _grams(fat),
+      sodiumText: sodium != null ? '${_fmt(sodium)}mg' : null,
+      fiberText: fiber != null ? _grams(fiber) : null,
+    );
+  }
+
   /// DB의 `result` 컬럼에 저장할 JSON. [parse]로 그대로 복원된다.
   Map<String, dynamic> toJson() => {
         if (foodName != null) 'foodName': foodName,

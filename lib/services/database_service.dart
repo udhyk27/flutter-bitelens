@@ -22,7 +22,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE analysis_history (
@@ -32,7 +32,8 @@ class DatabaseHelper {
             calories TEXT,
             result TEXT NOT NULL,
             created_at TEXT NOT NULL,
-            is_favorite INTEGER NOT NULL DEFAULT 0
+            is_favorite INTEGER NOT NULL DEFAULT 0,
+            meal TEXT
           )
         ''');
         await db.execute('''
@@ -56,6 +57,11 @@ class DatabaseHelper {
         if (oldVersion < 3) {
           await db.execute(
             'ALTER TABLE analysis_history ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 4) {
+          await db.execute(
+            'ALTER TABLE analysis_history ADD COLUMN meal TEXT',
           );
         }
       },
@@ -104,6 +110,7 @@ class DatabaseHelper {
   Future<int> insertAnalysis({
     required String imagePath,
     required String result,
+    String? meal,
   }) async {
     final db = await database;
     final persistedPath = await _persistImage(imagePath);
@@ -112,15 +119,21 @@ class DatabaseHelper {
       'result': result,
       'created_at': DateTime.now().toIso8601String(),
       'is_favorite': 0,
+      'meal': meal,
     });
   }
 
-  /// 기존 기록의 분석 결과(result) 갱신 — 먹은 양(배수) 변경 반영용
-  Future<void> updateAnalysisResult(int id, String result) async {
+  /// 기존 기록 갱신 — 결과(result)·끼니(meal) 중 전달된 항목만 반영.
+  /// 먹은 양(배수) 변경, 수동 보정, 끼니 태그 변경에 공용으로 사용.
+  Future<void> updateAnalysis(int id, {String? result, String? meal}) async {
+    final values = <String, Object?>{};
+    if (result != null) values['result'] = result;
+    if (meal != null) values['meal'] = meal;
+    if (values.isEmpty) return;
     final db = await database;
     await db.update(
       'analysis_history',
-      {'result': result},
+      values,
       where: 'id = ?',
       whereArgs: [id],
     );

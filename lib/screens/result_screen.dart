@@ -14,6 +14,7 @@ import 'dart:typed_data';
 import '../models/food_analysis.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
+import '../widgets/analysis_edit_sheet.dart';
 
 class ResultScreen extends StatefulWidget {
   final String imagePath;
@@ -30,8 +31,9 @@ class _ResultScreenState extends State<ResultScreen>
   FoodAnalysis? _analysis; // 현재 표시값(배수 반영)
   FoodAnalysis? _baseAnalysis; // AI 추정 1인분 기준값
   double _portion = 1.0; // 먹은 양 배수
-  int? _savedId; // 저장된 히스토리 row id (배수 변경 시 갱신)
+  int? _savedId; // 저장된 히스토리 row id (배수/보정 변경 시 갱신)
   bool _saveHistory = true;
+  String _meal = mealForDate(DateTime.now()); // 끼니 태그
   bool _isLoading = true;
   double? _tdee;
 
@@ -134,6 +136,7 @@ class _ResultScreenState extends State<ResultScreen>
         _savedId = await DatabaseHelper.instance.insertAnalysis(
           imagePath: widget.imagePath,
           result: analysis.toJsonString(),
+          meal: _meal,
         );
       }
     } on SocketException {
@@ -164,7 +167,36 @@ class _ResultScreenState extends State<ResultScreen>
     final id = _savedId;
     if (id != null && _saveHistory) {
       await DatabaseHelper.instance
-          .updateAnalysisResult(id, base.scale(factor).toJsonString());
+          .updateAnalysis(id, result: base.scale(factor).toJsonString());
+    }
+  }
+
+  /// 결과 수동 보정 + 끼니 태그 편집. 보정 시 배수는 1로 초기화된다.
+  Future<void> _openEdit() async {
+    final current = _analysis;
+    if (current == null) return;
+    final res = await showAnalysisEditSheet(context, analysis: current, meal: _meal);
+    if (res == null || !mounted) return;
+
+    setState(() {
+      _baseAnalysis = res.analysis;
+      _analysis = res.analysis;
+      _portion = 1.0;
+      _meal = res.meal;
+    });
+
+    if (!_saveHistory) return;
+    final id = _savedId;
+    if (id != null) {
+      await DatabaseHelper.instance
+          .updateAnalysis(id, result: res.analysis.toJsonString(), meal: res.meal);
+    } else if (res.analysis.hasNutrition) {
+      // 처음엔 영양소가 없어 저장 안 됐다가, 보정으로 값이 생긴 경우 새로 저장
+      _savedId = await DatabaseHelper.instance.insertAnalysis(
+        imagePath: widget.imagePath,
+        result: res.analysis.toJsonString(),
+        meal: res.meal,
+      );
     }
   }
 
@@ -239,6 +271,11 @@ class _ResultScreenState extends State<ResultScreen>
         ),
         centerTitle: true,
         actions: [
+          if (!_isLoading && _analysis != null && _analysis!.hasNutrition)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+              onPressed: _openEdit,
+            ),
           if (!_isLoading)
             IconButton(
               icon: const Icon(Icons.ios_share, color: Colors.white, size: 20),
@@ -368,6 +405,27 @@ class _ResultScreenState extends State<ResultScreen>
                         const SizedBox(width: 10),
                         const Text('분석 결과',
                             style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                        const Spacer(),
+                        if (_analysis != null && _analysis!.hasNutrition)
+                          GestureDetector(
+                            onTap: _openEdit,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: mealColorFor(_meal).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: mealColorFor(_meal).withOpacity(0.4)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(_meal,
+                                      style: TextStyle(color: mealColorFor(_meal), fontSize: 11, fontWeight: FontWeight.w600)),
+                                  const SizedBox(width: 4),
+                                  Icon(Icons.edit, color: mealColorFor(_meal), size: 11),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 20),
