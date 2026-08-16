@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bitelens/models/food_analysis.dart';
@@ -5,6 +6,16 @@ import 'package:bitelens/services/database_service.dart';
 import 'package:bitelens/widgets/analysis_edit_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+enum _DateFilter {
+  all('전체'),
+  today('오늘'),
+  week('7일'),
+  month('30일');
+
+  const _DateFilter(this.label);
+  final String label;
+}
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -25,6 +36,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
   double? _tdee;
   late ScrollController _scrollController;
 
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  _DateFilter _dateFilter = _DateFilter.all;
+  Timer? _debounce;
+
+  bool get _isFiltering => _searchQuery.isNotEmpty || _dateFilter != _DateFilter.all;
+
+  DateTime? get _since {
+    final now = DateTime.now();
+    switch (_dateFilter) {
+      case _DateFilter.today:
+        return DateTime(now.year, now.month, now.day);
+      case _DateFilter.week:
+        return now.subtract(const Duration(days: 7));
+      case _DateFilter.month:
+        return now.subtract(const Duration(days: 30));
+      case _DateFilter.all:
+        return null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -34,8 +66,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted || value == _searchQuery) return;
+      setState(() => _searchQuery = value);
+      _loadInitial();
+    });
+  }
+
+  void _setDateFilter(_DateFilter f) {
+    if (f == _dateFilter) return;
+    setState(() => _dateFilter = f);
+    _loadInitial();
   }
 
   void _onScroll() {
@@ -54,6 +103,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       limit: _pageSize,
       offset: 0,
       favoritesOnly: _showFavoritesOnly,
+      query: _searchQuery,
+      since: _since,
     );
     final weekly = await DatabaseHelper.instance.getWeeklyHistory();
 
@@ -73,6 +124,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       limit: _pageSize,
       offset: _history.length,
       favoritesOnly: _showFavoritesOnly,
+      query: _searchQuery,
+      since: _since,
     );
 
     setState(() {
@@ -155,15 +208,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 1)),
-      );
-    }
-
     final grouped = _groupByDate();
     final dateKeys = grouped.keys.toList();
+    final showChart = _weeklyData.isNotEmpty && !_isFiltering;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -211,7 +258,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
         ],
       ),
-      body: RefreshIndicator(
+      body: Column(
+        children: [
+          _buildSearchFilterBar(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 1))
+                : RefreshIndicator(
         color: Colors.deepOrange,
         backgroundColor: const Color(0xFF1A1A1A),
         onRefresh: _loadInitial,
@@ -221,16 +274,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-                itemCount: dateKeys.length + (_weeklyData.isNotEmpty ? 1 : 0) + (_isLoadingMore ? 1 : 0),
+                itemCount: dateKeys.length + (showChart ? 1 : 0) + (_isLoadingMore ? 1 : 0),
                 itemBuilder: (context, i) {
                   // 주간 차트 (맨 위)
-                  if (i == 0 && _weeklyData.isNotEmpty) {
+                  if (i == 0 && showChart) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: _WeeklyCalChart(weeklyHistory: _weeklyData, tdee: _tdee),
                     );
                   }
-                  final adjustedIndex = _weeklyData.isNotEmpty ? i - 1 : i;
+                  final adjustedIndex = showChart ? i - 1 : i;
 
                   // 로딩 인디케이터 (맨 아래)
                   if (adjustedIndex == dateKeys.length) {
@@ -293,6 +346,93 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 },
               ),
       ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+      child: Column(
+        children: [
+          // 검색창
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.07)),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 12),
+                const Icon(Icons.search, color: Colors.white38, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    cursorColor: Colors.deepOrange,
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      hintText: '음식 이름 검색',
+                      hintStyle: TextStyle(color: Colors.white24, fontSize: 14),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                if (_searchQuery.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      _searchController.clear();
+                      _debounce?.cancel();
+                      setState(() => _searchQuery = '');
+                      _loadInitial();
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Icon(Icons.close, color: Colors.white38, size: 16),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          // 날짜 필터 칩
+          Row(
+            children: _DateFilter.values.map((f) {
+              final sel = f == _dateFilter;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: () => _setDateFilter(f),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: sel ? Colors.deepOrange : Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: sel ? Colors.deepOrange : Colors.white.withOpacity(0.08),
+                      ),
+                    ),
+                    child: Text(
+                      f.label,
+                      style: TextStyle(
+                        color: sel ? Colors.white : Colors.white54,
+                        fontSize: 12,
+                        fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -302,17 +442,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            _showFavoritesOnly ? Icons.star_outline : Icons.history,
+            _isFiltering
+                ? Icons.search_off
+                : (_showFavoritesOnly ? Icons.star_outline : Icons.history),
             size: 56, color: Colors.white12,
           ),
           const SizedBox(height: 16),
           Text(
-            _showFavoritesOnly ? '즐겨찾기한 기록이 없어요' : '분석 기록이 없어요',
+            _isFiltering
+                ? '조건에 맞는 기록이 없어요'
+                : (_showFavoritesOnly ? '즐겨찾기한 기록이 없어요' : '분석 기록이 없어요'),
             style: const TextStyle(color: Colors.white30, fontSize: 15, letterSpacing: 1),
           ),
           const SizedBox(height: 8),
           Text(
-            _showFavoritesOnly ? '별표를 눌러 기록을 저장해보세요' : '음식을 촬영해서 분석해보세요',
+            _isFiltering
+                ? '검색어나 기간을 바꿔보세요'
+                : (_showFavoritesOnly ? '별표를 눌러 기록을 저장해보세요' : '음식을 촬영해서 분석해보세요'),
             style: const TextStyle(color: Colors.white12, fontSize: 13),
           ),
         ],

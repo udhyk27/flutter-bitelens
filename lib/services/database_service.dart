@@ -145,20 +145,51 @@ class DatabaseHelper {
     return await db.query('analysis_history', orderBy: 'created_at DESC');
   }
 
-  /// 페이지네이션 조회
+  /// 페이지네이션 + 검색/필터 조회.
+  /// [query]는 음식명 검색(result LIKE), [since]는 이 시각 이후 기록만.
   Future<List<Map<String, dynamic>>> getAnalysisHistoryPaged({
     int limit = 20,
     int offset = 0,
     bool favoritesOnly = false,
+    String? query,
+    DateTime? since,
   }) async {
     final db = await database;
+    final (where, args) = _buildFilter(
+      favoritesOnly: favoritesOnly,
+      query: query,
+      since: since,
+    );
     return await db.query(
       'analysis_history',
-      where: favoritesOnly ? 'is_favorite = 1' : null,
+      where: where,
+      whereArgs: args,
       orderBy: 'created_at DESC',
       limit: limit,
       offset: offset,
     );
+  }
+
+  /// favoritesOnly/query/since 조건을 (whereClause, args)로 조립
+  (String?, List<Object?>?) _buildFilter({
+    required bool favoritesOnly,
+    String? query,
+    DateTime? since,
+  }) {
+    final clauses = <String>[];
+    final args = <Object?>[];
+    if (favoritesOnly) clauses.add('is_favorite = 1');
+    final q = query?.trim() ?? '';
+    if (q.isNotEmpty) {
+      clauses.add('result LIKE ?');
+      args.add('%$q%');
+    }
+    if (since != null) {
+      clauses.add('created_at >= ?');
+      args.add(since.toIso8601String());
+    }
+    if (clauses.isEmpty) return (null, null);
+    return (clauses.join(' AND '), args);
   }
 
   /// 전체 기록 수 조회
