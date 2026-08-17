@@ -1,9 +1,11 @@
 import 'package:bitelens/screens/webview_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/api_service.dart';
 import '../services/database_service.dart';
+import '../services/export_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -173,6 +175,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _SettingsCard(
                 children: [
                   _ActionItem(
+                    icon: Icons.file_download_outlined,
+                    title: '데이터 내보내기 (CSV)',
+                    subtitle: '분석 기록을 CSV 파일로 공유',
+                    onTap: _exportCsv,
+                  ),
+                  _Divider(),
+                  _ActionItem(
                     icon: Icons.delete_sweep_outlined,
                     title: '분석 기록 전체 삭제',
                     titleColor: Colors.red.shade300,
@@ -239,6 +248,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _exportCsv() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final rows = await DatabaseHelper.instance.getAnalysisHistory();
+    if (!mounted) return;
+
+    if (rows.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('내보낼 기록이 없어요')),
+      );
+      return;
+    }
+
+    try {
+      final csv = ExportService.buildHistoryCsv(rows);
+      final fileName = ExportService.defaultFileName(DateTime.now());
+      final file = await ExportService.writeCsvToTemp(csv, fileName);
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'text/csv')],
+        subject: 'BiteLens 분석 기록',
+      );
+    } catch (e) {
+      debugPrint('CSV 내보내기 오류: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('내보내기 중 오류가 발생했습니다.')),
+      );
+    }
   }
 
   void _showClearHistoryDialog() {
@@ -412,6 +450,7 @@ class _SelectItem extends StatelessWidget {
 class _ActionItem extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final Color titleColor;
   final Color iconColor;
   final VoidCallback onTap;
@@ -419,6 +458,7 @@ class _ActionItem extends StatelessWidget {
   const _ActionItem({
     required this.icon,
     required this.title,
+    this.subtitle,
     this.titleColor = Colors.white70,
     this.iconColor = Colors.white38,
     required this.onTap,
@@ -435,8 +475,17 @@ class _ActionItem extends StatelessWidget {
             Icon(icon, color: iconColor, size: 20),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(title,
-                  style: TextStyle(color: titleColor, fontSize: 14)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(color: titleColor, fontSize: 14)),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 3),
+                    Text(subtitle!,
+                        style: const TextStyle(color: Colors.white30, fontSize: 12)),
+                  ],
+                ],
+              ),
             ),
             const Icon(Icons.chevron_right, color: Colors.white12, size: 18),
           ],
