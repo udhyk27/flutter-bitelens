@@ -99,10 +99,15 @@ class _ResultScreenState extends State<ResultScreen>
         _setError('이미지를 읽을 수 없습니다. 다른 사진을 사용해주세요.');
         return;
       }
-      final isJpeg = rawBytes[0] == 0xFF && rawBytes[1] == 0xD8 && rawBytes[2] == 0xFF;
-      final imageBytes = isJpeg
-          ? rawBytes
-          : await compute(_convertToJpeg, rawBytes);
+      // 업로드 전 다운스케일(별도 isolate) — 전송량·Gemini 입력 비용 절감,
+      // 서버 용량 상한 준수. 디코딩 실패 시 원본 바이트로 폴백.
+      Uint8List imageBytes;
+      try {
+        imageBytes = await compute(_prepareImage, rawBytes);
+      } catch (e) {
+        debugPrint('이미지 리사이즈 실패, 원본 사용: $e');
+        imageBytes = rawBytes;
+      }
 
       // App Check 토큰 (등록된 앱임을 Cloud Function에 증명)
       String? appCheckToken;
@@ -698,11 +703,21 @@ class _FramePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-Uint8List _convertToJpeg(Uint8List bytes) {
+/// 업로드용 이미지 준비(isolate에서 실행):
+/// 최대 1024px로 축소 후 JPEG(품질 85)로 인코딩해 전송량과 Gemini 입력 비용을 낮춘다.
+Uint8List _prepareImage(Uint8List bytes) {
   final decoded = img.decodeImage(bytes);
-  if (decoded == null) throw Exception('이미지 디코딩에 실패했습니다. 지원하지 않는 형식일 수 있습니다.');
-  final jpeg = img.JpegEncoder().encode(decoded);
-  return Uint8List.fromList(jpeg);
+  if (decoded == null) {
+    throw Exception('이미지 디코딩에 실패했습니다. 지원하지 않는 형식일 수 있습니다.');
+  }
+  const maxDim = 1024;
+  img.Image out = decoded;
+  if (decoded.width > maxDim || decoded.height > maxDim) {
+    out = decoded.width >= decoded.height
+        ? img.copyResize(decoded, width: maxDim)
+        : img.copyResize(decoded, height: maxDim);
+  }
+  return Uint8List.fromList(img.encodeJpg(out, quality: 85));
 }
 
 // ─── 영양소 시각화 카드 ───────────────────────────────────────────────
