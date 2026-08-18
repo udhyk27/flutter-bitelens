@@ -27,10 +27,9 @@ exports.analyzeFood = onRequest(
     secrets: [GEMINI_API_KEY],
     // 인스턴스 폭증에 따른 요금 폭탄 방지(동시 인스턴스 상한)
     maxInstances: 10,
-    // 인스턴스당 동시 요청 수 — 큰 base64를 메모리에 들고 있으므로 보수적으로
-    concurrency: 20,
     memory: "512MiB",
     timeoutSeconds: 60,
+    // concurrency 미지정: 기본값 사용(명시하면 CPU>=1 제약으로 배포 실패 가능)
     // region 미지정: 기본 us-central1 유지(기존 호출 URL 불변)
   },
   async (req, res) => {

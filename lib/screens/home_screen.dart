@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bitelens/models/food_analysis.dart';
 import 'package:bitelens/screens/profile_screen.dart';
 import 'package:bitelens/screens/result_screen.dart';
 import 'package:bitelens/screens/settings_screen.dart';
@@ -26,6 +27,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _isProfileSet = false;
   int _todayCalories = 0;
   double? _tdee;
+  double _todayCarbs = 0, _todayProtein = 0, _todayFat = 0;
+  double? _carbGoal, _proteinGoal, _fatGoal;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -106,19 +109,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _loadTodayStats() async {
     final prefs = await SharedPreferences.getInstance();
     final tdee = prefs.getDouble('tdee');
+    final carbGoal = prefs.getDouble('carb_goal');
+    final proteinGoal = prefs.getDouble('protein_goal');
+    final fatGoal = prefs.getDouble('fat_goal');
     final history = await DatabaseHelper.instance.getAnalysisHistory();
     final now = DateTime.now();
-    final todayCal = history.fold<int>(0, (sum, r) {
+    int todayCal = 0;
+    double carbs = 0, protein = 0, fat = 0;
+    for (final r in history) {
       final dt = DateTime.parse(r['created_at'] as String).toLocal();
       if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
-        return sum + (NutritionParser.parseCaloriesInt(r['result'] as String) ?? 0);
+        final a = FoodAnalysis.parse(r['result'] as String);
+        todayCal += a.calories ?? 0;
+        carbs += a.carbs ?? 0;
+        protein += a.protein ?? 0;
+        fat += a.fat ?? 0;
       }
-      return sum;
-    });
+    }
     if (!mounted) return;
     setState(() {
       _todayCalories = todayCal;
       _tdee = tdee;
+      _todayCarbs = carbs;
+      _todayProtein = protein;
+      _todayFat = fat;
+      _carbGoal = carbGoal;
+      _proteinGoal = proteinGoal;
+      _fatGoal = fatGoal;
     });
   }
 
@@ -196,7 +213,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (_todayCalories > 0 || _tdee != null)
-                      _TodayCalBanner(todayCalories: _todayCalories, tdee: _tdee),
+                      _TodayCalBanner(
+                        todayCalories: _todayCalories,
+                        tdee: _tdee,
+                        carbs: _todayCarbs,
+                        protein: _todayProtein,
+                        fat: _todayFat,
+                        carbGoal: _carbGoal,
+                        proteinGoal: _proteinGoal,
+                        fatGoal: _fatGoal,
+                      ),
                     if (_todayCalories > 0 || _tdee != null) const SizedBox(height: 12),
                     const Text('음식을 프레임에 맞춰주세요',
                         style: TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 1.2)),
@@ -263,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                  ).then((_) => _checkProfileSet()); // 돌아왔을 때 재확인
+                  ).then((_) { _checkProfileSet(); _loadTodayStats(); }); // 돌아왔을 때 재확인
                 },
               ),
 
@@ -296,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                ).then((_) => _checkProfileSet());
+                ).then((_) { _checkProfileSet(); _loadTodayStats(); });
               },
             ),
             _DrawerItem(
@@ -428,7 +454,18 @@ class _ShutterButton extends StatelessWidget {
 class _TodayCalBanner extends StatelessWidget {
   final int todayCalories;
   final double? tdee;
-  const _TodayCalBanner({required this.todayCalories, this.tdee});
+  final double carbs, protein, fat;
+  final double? carbGoal, proteinGoal, fatGoal;
+  const _TodayCalBanner({
+    required this.todayCalories,
+    this.tdee,
+    this.carbs = 0,
+    this.protein = 0,
+    this.fat = 0,
+    this.carbGoal,
+    this.proteinGoal,
+    this.fatGoal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -507,8 +544,61 @@ class _TodayCalBanner extends StatelessWidget {
               ),
             ),
           ],
+          if (carbGoal != null && proteinGoal != null && fatGoal != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _MacroMini(label: '탄', value: carbs, goal: carbGoal!, color: Colors.blue.shade300)),
+                const SizedBox(width: 8),
+                Expanded(child: _MacroMini(label: '단', value: protein, goal: proteinGoal!, color: Colors.green.shade400)),
+                const SizedBox(width: 8),
+                Expanded(child: _MacroMini(label: '지', value: fat, goal: fatGoal!, color: Colors.orange.shade300)),
+              ],
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+// ─── 매크로 미니 진행바 ───────────────────────────────────────────────
+
+class _MacroMini extends StatelessWidget {
+  final String label;
+  final double value;
+  final double goal;
+  final Color color;
+  const _MacroMini({required this.label, required this.value, required this.goal, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = goal > 0 ? (value / goal).clamp(0.0, 1.0) : 0.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+            const Spacer(),
+            Text('${value.round()}/${goal.round()}g',
+                style: const TextStyle(color: Colors.white38, fontSize: 9)),
+          ],
+        ),
+        const SizedBox(height: 3),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: Stack(
+            children: [
+              Container(height: 3, color: Colors.white.withOpacity(0.1)),
+              FractionallySizedBox(
+                widthFactor: ratio,
+                child: Container(height: 3, color: color),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

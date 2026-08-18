@@ -20,6 +20,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   double? _bmr;
   double? _tdee;
 
+  String _selectedMacroPreset = '밸런스';
+  double? _carbGoal; // g
+  double? _proteinGoal; // g
+  double? _fatGoal; // g
+
+  // 프리셋별 칼로리 비율 [탄수화물, 단백질, 지방]
+  final Map<String, List<double>> _macroPresets = {
+    '밸런스': [0.50, 0.20, 0.30],
+    '고단백': [0.40, 0.30, 0.30],
+    '저탄수': [0.25, 0.35, 0.40],
+  };
+
   List<Map<String, dynamic>> _weightLog = [];
   final _logWeightController = TextEditingController();
 
@@ -57,14 +69,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedPreset = prefs.getString('macro_ratio');
     setState(() {
       _selectedGender = prefs.getString('gender') ?? '남성';
       _selectedActivity = prefs.getString('activity') ?? '보통 (주 3~5회 운동)';
       _ageController.text = prefs.getString('age') ?? '';
       _heightController.text = prefs.getString('height') ?? '';
       _weightController.text = prefs.getString('weight') ?? '';
+      if (savedPreset != null && _macroPresets.containsKey(savedPreset)) {
+        _selectedMacroPreset = savedPreset;
+      }
     });
     _calculate();
+    // 기존 사용자(매크로 목표 미저장)도 프로필 진입 시 목표가 저장되도록
+    if (_tdee != null) await _saveBodyInfo();
   }
 
   Future<void> _loadWeightLog() async {
@@ -79,7 +97,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await prefs.setString('height', _heightController.text);
     await prefs.setString('weight', _weightController.text);
     await prefs.setString('activity', _selectedActivity);
+    await prefs.setString('macro_ratio', _selectedMacroPreset);
     if (_tdee != null) await prefs.setDouble('tdee', _tdee!);
+    if (_carbGoal != null) await prefs.setDouble('carb_goal', _carbGoal!);
+    if (_proteinGoal != null) await prefs.setDouble('protein_goal', _proteinGoal!);
+    if (_fatGoal != null) await prefs.setDouble('fat_goal', _fatGoal!);
   }
 
   void _calculate() {
@@ -96,7 +118,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         weight >= 2 && weight <= 400;
 
     if (!valid) {
-      setState(() { _bmi = null; _bmr = null; _tdee = null; });
+      setState(() {
+        _bmi = null; _bmr = null; _tdee = null;
+        _carbGoal = null; _proteinGoal = null; _fatGoal = null;
+      });
       return;
     }
 
@@ -105,12 +130,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
         : 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
     final multiplier = _activityMultiplier[_selectedActivity] ?? 1.55;
+    final tdee = bmr * multiplier;
+
+    final ratios = _macroPresets[_selectedMacroPreset] ?? _macroPresets['밸런스']!;
 
     setState(() {
       _bmi = bmi;
       _bmr = bmr;
-      _tdee = bmr * multiplier;
+      _tdee = tdee;
+      // 칼로리 비율 → 그램 (탄·단 4kcal/g, 지방 9kcal/g)
+      _carbGoal = tdee * ratios[0] / 4;
+      _proteinGoal = tdee * ratios[1] / 4;
+      _fatGoal = tdee * ratios[2] / 9;
     });
+  }
+
+  Future<void> _setMacroPreset(String preset) async {
+    if (preset == _selectedMacroPreset) return;
+    setState(() => _selectedMacroPreset = preset);
+    _calculate();
+    await _saveBodyInfo();
   }
 
   Future<void> _addWeightLog() async {
@@ -352,6 +391,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Text(
                     '* 해리스-베네딕트 공식 기반 추정치입니다. 개인차가 있을 수 있어요.',
                     style: TextStyle(color: Colors.white24, fontSize: 11, height: 1.5),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // ─── 매크로 목표 ──────────────────────────────
+                _SectionHeader(title: '매크로 목표'),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111111),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('목표 비율',
+                          style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: _macroPresets.keys.map((preset) {
+                          final sel = preset == _selectedMacroPreset;
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: GestureDetector(
+                                onTap: () => _setMacroPreset(preset),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: sel ? Colors.deepOrange : Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: sel ? Colors.deepOrange : Colors.white.withOpacity(0.08),
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(preset,
+                                        style: TextStyle(
+                                          color: sel ? Colors.white : Colors.white54,
+                                          fontSize: 13,
+                                          fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                                        )),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(child: _MacroGoalCol(
+                            label: '탄수화물', grams: _carbGoal, color: Colors.blue.shade300)),
+                          Expanded(child: _MacroGoalCol(
+                            label: '단백질', grams: _proteinGoal, color: Colors.green.shade400)),
+                          Expanded(child: _MacroGoalCol(
+                            label: '지방', grams: _fatGoal, color: Colors.orange.shade300)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'TDEE와 선택한 비율로 계산된 하루 목표량이에요',
+                        style: TextStyle(color: Colors.white24, fontSize: 11, height: 1.5),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -652,6 +760,36 @@ class _SectionHeader extends StatelessWidget {
     child: Text(title.toUpperCase(),
         style: const TextStyle(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 2)),
   );
+}
+
+class _MacroGoalCol extends StatelessWidget {
+  final String label;
+  final double? grams;
+  final Color color;
+  const _MacroGoalCol({required this.label, required this.grams, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white30, fontSize: 11)),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(grams != null ? grams!.toStringAsFixed(0) : '-',
+                style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w700, height: 1)),
+            const SizedBox(width: 2),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 2),
+              child: Text('g', style: TextStyle(color: Colors.white38, fontSize: 12)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 class _HairLine extends StatelessWidget {
