@@ -723,8 +723,11 @@ class _ChartPainter extends CustomPainter {
     final linePath = Path();
     for (int i = 0; i < weights.length; i++) {
       final o = _toOffset(i, size);
-      if (i == 0) linePath.moveTo(o.dx, o.dy);
-      else linePath.lineTo(o.dx, o.dy);
+      if (i == 0) {
+        linePath.moveTo(o.dx, o.dy);
+      } else {
+        linePath.lineTo(o.dx, o.dy);
+      }
     }
     canvas.drawPath(
       linePath,

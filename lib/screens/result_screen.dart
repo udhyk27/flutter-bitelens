@@ -9,7 +9,6 @@ import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image/image.dart' as img;
-import 'dart:typed_data';
 
 import '../models/food_analysis.dart';
 import '../services/api_service.dart';
@@ -255,7 +254,7 @@ class _ResultScreenState extends State<ResultScreen>
           Uri.parse(_analyzeUrl),
           headers: {
             'Content-Type': 'application/json',
-            if (appCheckToken != null) 'X-Firebase-AppCheck': appCheckToken,
+            'X-Firebase-AppCheck': ?appCheckToken,
           },
           body: jsonEncode({
             'imageBase64': base64Image,
@@ -692,7 +691,7 @@ class _TdeeBanner extends StatelessWidget {
           Row(
             children: [
               if (parsedCalories != null) ...[
-                Text('${parsedCalories} kcal',
+                Text('$parsedCalories kcal',
                     style: TextStyle(color: barColor, fontSize: 13, fontWeight: FontWeight.w700)),
                 const SizedBox(width: 6),
                 Text(

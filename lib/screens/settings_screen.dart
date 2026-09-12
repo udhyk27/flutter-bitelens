@@ -300,8 +300,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () async {
+              // async gap 이후 context 사용을 피하려 Navigator를 미리 캡처
+              final navigator = Navigator.of(context);
               await DatabaseHelper.instance.clearAll();
-              Navigator.pop(context);
+              navigator.pop();
             },
             child: Text('삭제', style: TextStyle(color: Colors.red.shade300)),
           ),
