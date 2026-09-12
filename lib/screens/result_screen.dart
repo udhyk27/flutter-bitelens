@@ -278,12 +278,20 @@ class _ResultScreenState extends State<ResultScreen>
             continue;
           }
           throw const _AnalyzeException('앱 인증에 실패했습니다. 앱을 재시작해주세요.');
-        } else if (response.statusCode == 429) {
+        } else if (response.statusCode == 429 ||
+            response.statusCode == 503 ||
+            response.statusCode == 504) {
+          // 일시적 오류(혼잡/서비스 불안정/타임아웃) → 백오프 후 재시도.
+          if (attempt < maxRetries - 1) {
+            debugPrint('서버 ${response.statusCode} → 백오프 후 재시도');
+            await Future.delayed(Duration(seconds: (attempt + 1) * 2));
+            continue;
+          }
           throw _AnalyzeException(
               _serverMessage(response) ?? '서버가 혼잡합니다. 잠시 후 다시 시도해주세요.');
         } else {
-          // 서버가 내려준 안내 메시지(사진 분석 불가/용량 초과 등)를 그대로 표시,
-          // 없으면 상태코드 폴백.
+          // 그 외(사진 분석 불가/용량 초과 등)는 재시도해도 소용없으므로
+          // 서버가 내려준 안내 메시지를 그대로 표시(없으면 상태코드 폴백).
           throw _AnalyzeException(
               _serverMessage(response) ?? '서버 오류 (${response.statusCode})');
         }

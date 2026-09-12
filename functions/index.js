@@ -82,6 +82,15 @@ exports.analyzeFood = onRequest(
         res.status(413).json({ error: "이미지 용량이 너무 큽니다. 더 작은 사진을 사용해주세요." });
         return;
       }
+      // base64 형식 검증 — 깨진 문자열을 Gemini에 보내 API 비용/500을 낭비하지
+      // 않도록 여기서 400으로 거른다. (표준 base64: A-Z a-z 0-9 + / 와 패딩 =)
+      if (
+        imageBase64.length % 4 !== 0 ||
+        !/^[A-Za-z0-9+/]+={0,2}$/.test(imageBase64)
+      ) {
+        res.status(400).json({ error: "이미지 데이터가 올바르지 않습니다. 다시 시도해주세요." });
+        return;
+      }
 
       // 클라이언트가 알려준 포맷을 허용 목록으로 검증(없으면 기본 jpeg).
       // 잘못된 MIME으로 라벨링하면 Gemini 디코딩 실패로 이어질 수 있다.
