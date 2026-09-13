@@ -19,15 +19,22 @@ Future<void> main() async {
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  await Firebase.initializeApp();
+  // Firebase/App Check 초기화가 실패해도 앱은 뜨도록 방어한다.
+  // (실패 시 이후 Cloud Function 호출은 인증 실패로 처리되지만 —
+  //  이 경로는 이미 방어됨 — 히스토리·프로필 등 로컬 기능은 정상 동작.)
+  try {
+    await Firebase.initializeApp();
 
-  // App Check: 등록된 앱에서만 Cloud Function 호출 가능하도록 보호
-  // 디버그 모드에서는 debug provider 사용 → 콘솔에 출력되는 UUID를
-  // Firebase 콘솔 > App Check > 앱 > 디버그 토큰 관리에 등록해야 합니다.
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
-  );
+    // App Check: 등록된 앱에서만 Cloud Function 호출 가능하도록 보호
+    // 디버그 모드에서는 debug provider 사용 → 콘솔에 출력되는 UUID를
+    // Firebase 콘솔 > App Check > 앱 > 디버그 토큰 관리에 등록해야 합니다.
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+      appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+    );
+  } catch (e) {
+    debugPrint('Firebase 초기화 실패: $e');
+  }
 
   try {
     _cameras = await availableCameras();
