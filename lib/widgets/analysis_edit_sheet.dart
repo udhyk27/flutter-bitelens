@@ -169,9 +169,9 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: sel ? c.withOpacity(0.2) : Colors.white.withOpacity(0.04),
+                        color: sel ? c.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: sel ? c : Colors.white.withOpacity(0.08)),
+                        border: Border.all(color: sel ? c : Colors.white.withValues(alpha: 0.08)),
                       ),
                       child: Text(m,
                           style: TextStyle(
@@ -215,7 +215,7 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.06),
+                        color: Colors.white.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Center(
@@ -269,15 +269,15 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.04),
+        fillColor: Colors.white.withValues(alpha: 0.04),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                  colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
                 ),
               ),
             ),
@@ -198,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.85), Colors.transparent],
+                  colors: [Colors.black.withValues(alpha: 0.85), Colors.transparent],
                 ),
               ),
             ),
@@ -311,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.deepOrange.withOpacity(0.15),
+                  color: Colors.deepOrange.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Text('미설정', style: TextStyle(color: Colors.deepOrange, fontSize: 11)),
@@ -484,9 +484,9 @@ class _TodayCalBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.55),
+        color: Colors.black.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -519,7 +519,7 @@ class _TodayCalBanner extends StatelessWidget {
               borderRadius: BorderRadius.circular(3),
               child: Stack(
                 children: [
-                  Container(height: 4, color: Colors.white.withOpacity(0.1)),
+                  Container(height: 4, color: Colors.white.withValues(alpha: 0.1)),
                   FractionallySizedBox(
                     widthFactor: ratio,
                     child: Container(
@@ -590,7 +590,7 @@ class _MacroMini extends StatelessWidget {
           borderRadius: BorderRadius.circular(2),
           child: Stack(
             children: [
-              Container(height: 3, color: Colors.white.withOpacity(0.1)),
+              Container(height: 3, color: Colors.white.withValues(alpha: 0.1)),
               FractionallySizedBox(
                 widthFactor: ratio,
                 child: Container(height: 3, color: color),
@@ -621,7 +621,7 @@ class _CameraPermissionDeniedView extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.no_photography_outlined, color: Colors.white30, size: 36),

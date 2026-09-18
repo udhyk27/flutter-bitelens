@@ -377,7 +377,7 @@ class _ResultScreenState extends State<ResultScreen>
                   ),
                 ),
                 Positioned.fill(
-                  child: Container(color: Colors.black.withOpacity(0.35)),
+                  child: Container(color: Colors.black.withValues(alpha: 0.35)),
                 ),
                 Positioned(
                   bottom: 0, left: 0, right: 0,
@@ -408,14 +408,14 @@ class _ResultScreenState extends State<ResultScreen>
                                 gradient: LinearGradient(
                                   colors: [
                                     Colors.transparent,
-                                    Colors.deepOrange.withOpacity(0.6),
+                                    Colors.deepOrange.withValues(alpha: 0.6),
                                     Colors.orange,
-                                    Colors.deepOrange.withOpacity(0.6),
+                                    Colors.deepOrange.withValues(alpha: 0.6),
                                     Colors.transparent,
                                   ],
                                 ),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.orange.withOpacity(0.5), blurRadius: 10, spreadRadius: 4),
+                                  BoxShadow(color: Colors.orange.withValues(alpha: 0.5), blurRadius: 10, spreadRadius: 4),
                                 ],
                               ),
                             ),
@@ -425,7 +425,7 @@ class _ResultScreenState extends State<ResultScreen>
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
-                                  colors: [Colors.orange.withOpacity(0.1), Colors.transparent],
+                                  colors: [Colors.orange.withValues(alpha: 0.1), Colors.transparent],
                                 ),
                               ),
                             ),
@@ -494,9 +494,9 @@ class _ResultScreenState extends State<ResultScreen>
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: mealColorFor(_meal).withOpacity(0.15),
+                                color: mealColorFor(_meal).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: mealColorFor(_meal).withOpacity(0.4)),
+                                border: Border.all(color: mealColorFor(_meal).withValues(alpha: 0.4)),
                               ),
                               child: Row(
                                 children: [
@@ -518,7 +518,7 @@ class _ResultScreenState extends State<ResultScreen>
                       decoration: BoxDecoration(
                         color: const Color(0xFF141414),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.07)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
                       ),
                       child: Text(
                         _analysis?.displayText ?? _result,
@@ -545,9 +545,9 @@ class _ResultScreenState extends State<ResultScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.03),
+                        color: Colors.white.withValues(alpha: 0.03),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                       ),
                       child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,7 +648,7 @@ class _TdeeBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -671,7 +671,7 @@ class _TdeeBanner extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: Stack(
               children: [
-                Container(height: 6, color: Colors.white.withOpacity(0.07)),
+                Container(height: 6, color: Colors.white.withValues(alpha: 0.07)),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 800),
                   curve: Curves.easeOut,
@@ -723,9 +723,9 @@ class ProfileNudgeBanner extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.deepOrange.withOpacity(0.1),
+          color: Colors.deepOrange.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.deepOrange.withOpacity(0.25)),
+          border: Border.all(color: Colors.deepOrange.withValues(alpha: 0.25)),
         ),
         child: Row(
           children: [
@@ -851,7 +851,7 @@ class _PortionSelector extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -881,10 +881,10 @@ class _PortionSelector extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
-                        color: isSel ? Colors.deepOrange : Colors.white.withOpacity(0.05),
+                        color: isSel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isSel ? Colors.deepOrange : Colors.white.withOpacity(0.08),
+                          color: isSel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.08),
                         ),
                       ),
                       child: Center(
@@ -934,7 +934,7 @@ class _NutritionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -976,7 +976,7 @@ class _NutritionCard extends StatelessWidget {
 
           if (sodiumStr != null || fiberStr != null) ...[
             const SizedBox(height: 12),
-            Container(height: 0.5, color: Colors.white.withOpacity(0.06)),
+            Container(height: 0.5, color: Colors.white.withValues(alpha: 0.06)),
             const SizedBox(height: 12),
             Row(children: [
               if (sodiumStr != null)

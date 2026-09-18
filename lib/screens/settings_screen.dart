@@ -78,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF111111),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 child: Row(
                   children: [
@@ -346,7 +346,7 @@ class _SettingsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF111111),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(children: children),
     );
@@ -392,8 +392,8 @@ class _ToggleItem extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.deepOrange,
-            activeTrackColor: Colors.deepOrange.withOpacity(0.3),
+            activeThumbColor: Colors.deepOrange,
+            activeTrackColor: Colors.deepOrange.withValues(alpha: 0.3),
             inactiveThumbColor: Colors.white24,
             inactiveTrackColor: Colors.white10,
           ),
@@ -504,7 +504,7 @@ class _Divider extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(left: 54),
       height: 0.5,
-      color: Colors.white.withOpacity(0.06),
+      color: Colors.white.withValues(alpha: 0.06),
     );
   }
 }

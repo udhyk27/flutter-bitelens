@@ -81,13 +81,20 @@ class _AnimatedSplashState extends State<AnimatedSplash> {
     _initializeData();
   }
 
+  // 스플래시 최소 노출 시간(브랜딩). 필요 시 이 값만 조정.
+  static const _minSplash = Duration(milliseconds: 1200);
+  // Remote Config가 느려도 스플래시가 오래 멈추지 않도록 두는 상한.
+  static const _configTimeout = Duration(seconds: 3);
+
   Future<void> _initializeData() async {
     try {
-      // 스플래시 최소 노출 시간과 Remote Config 로드를 병렬 처리
-      // → 홈 진입 시점에 store/약관 URL, ai_model 값이 준비됨
+      // 스플래시 최소 노출과 Remote Config 로드를 병렬 처리
+      // → 홈 진입 시점에 store/약관 URL, ai_model 값이 준비됨.
+      // RC는 상한을 둬, 느린 네트워크에서 스플래시가 최대 fetchTimeout(10s)까지
+      // 멈추지 않게 한다(초과 시 기본/이전 값으로 진행 — RC는 이미 방어됨).
       await Future.wait([
-        Future.delayed(const Duration(milliseconds: 2500)),
-        Api().getRemoteConfig(),
+        Future.delayed(_minSplash),
+        Api().getRemoteConfig().timeout(_configTimeout, onTimeout: () {}),
       ]);
 
       final prefs = await SharedPreferences.getInstance();

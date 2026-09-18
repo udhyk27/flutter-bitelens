@@ -246,7 +246,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
+                    color: Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -360,9 +360,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           // 검색창
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.07)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
             ),
             child: Row(
               children: [
@@ -412,10 +412,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
-                      color: sel ? Colors.deepOrange : Colors.white.withOpacity(0.05),
+                      color: sel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: sel ? Colors.deepOrange : Colors.white.withOpacity(0.08),
+                        color: sel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.08),
                       ),
                     ),
                     child: Text(
@@ -571,7 +571,7 @@ class _WeeklyCalChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF111111),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,7 +600,7 @@ class _WeeklyCalChart extends StatelessWidget {
               final overTdee = tdee != null && cal > tdee!;
               final barColor = isToday
                   ? (overTdee ? Colors.red.shade400 : Colors.deepOrange)
-                  : (cal > 0 ? Colors.white.withOpacity(0.2) : Colors.transparent);
+                  : (cal > 0 ? Colors.white.withValues(alpha: 0.2) : Colors.transparent);
 
               return Expanded(
                 child: Column(
@@ -692,7 +692,7 @@ class _HistoryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF111111),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.06)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
         child: Row(
           children: [
@@ -723,7 +723,7 @@ class _HistoryCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: mealColor.withOpacity(0.15),
+                            color: mealColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(mealLabel,
@@ -744,7 +744,7 @@ class _HistoryCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange.withOpacity(0.15),
+                            color: Colors.deepOrange.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(calories,
@@ -755,7 +755,7 @@ class _HistoryCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.white.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -892,7 +892,7 @@ class _HistoryCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A1A1A),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.07)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
                       ),
                       child: Text(FoodAnalysis.parse(result).displayText,
                           style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.8)),
@@ -926,7 +926,7 @@ class _NutritionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -964,7 +964,7 @@ class _NutritionCard extends StatelessWidget {
 
           if (NutritionParser.sodium(result) != '-' || NutritionParser.fiber(result) != '-') ...[
             const SizedBox(height: 12),
-            Container(height: 0.5, color: Colors.white.withOpacity(0.06)),
+            Container(height: 0.5, color: Colors.white.withValues(alpha: 0.06)),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -1070,7 +1070,7 @@ class _NutriBadge extends StatelessWidget {
       children: [
         Container(
           width: 14, height: 14,
-          decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
           child: Center(child: Text(label, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w700))),
         ),
         const SizedBox(width: 3),

@@ -214,9 +214,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.deepOrange.withOpacity(0.08),
+                  color: Colors.deepOrange.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.deepOrange.withOpacity(0.2)),
+                  border: Border.all(color: Colors.deepOrange.withValues(alpha: 0.2)),
                 ),
                 child: const Row(
                   children: [
@@ -241,7 +241,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF111111),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -325,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,7 +343,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: _getBmiColor(_bmi!).withOpacity(0.15),
+                                color: _getBmiColor(_bmi!).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(_getBmiLabel(_bmi!),
@@ -404,7 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,10 +423,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: sel ? Colors.deepOrange : Colors.white.withOpacity(0.05),
+                                    color: sel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.05),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: sel ? Colors.deepOrange : Colors.white.withOpacity(0.08),
+                                      color: sel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.08),
                                     ),
                                   ),
                                   child: Center(
@@ -470,7 +470,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
                   child: const Column(
                     children: [
@@ -496,7 +496,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF111111),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
@@ -544,7 +544,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
                   child: _WeightChart(logs: _weightLog),
                 ),
@@ -555,7 +555,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
@@ -582,7 +582,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             background: Container(
                               alignment: Alignment.centerRight,
                               padding: const EdgeInsets.only(right: 20),
-                              color: Colors.red.shade900.withOpacity(0.5),
+                              color: Colors.red.shade900.withValues(alpha: 0.5),
                               child: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
                             ),
                             onDismissed: (_) => _deleteWeightLog(row['id'] as int),
@@ -592,7 +592,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Container(
                                     margin: const EdgeInsets.only(left: 54),
                                     height: 0.5,
-                                    color: Colors.white.withOpacity(0.05),
+                                    color: Colors.white.withValues(alpha: 0.05),
                                   ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -640,7 +640,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
                   child: const Column(
                     children: [
@@ -714,7 +714,7 @@ class _ChartPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.deepOrange.withOpacity(0.3), Colors.deepOrange.withOpacity(0.0)],
+          colors: [Colors.deepOrange.withValues(alpha: 0.3), Colors.deepOrange.withValues(alpha: 0.0)],
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
         ..style = PaintingStyle.fill,
     );
@@ -798,7 +798,7 @@ class _MacroGoalCol extends StatelessWidget {
 class _HairLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      Container(height: 0.5, color: Colors.white.withOpacity(0.06));
+      Container(height: 0.5, color: Colors.white.withValues(alpha: 0.06));
 }
 
 class _GenderToggle extends StatelessWidget {
@@ -809,7 +809,7 @@ class _GenderToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.06), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: ['남성', '여성'].map((g) {
           final selected = value == g;
@@ -849,9 +849,9 @@ class _BodyInputField extends StatelessWidget {
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: TextField(
             controller: controller,
@@ -901,7 +901,7 @@ class _BmiGaugeBar extends StatelessWidget {
                 width: 8, height: 10,
                 decoration: BoxDecoration(
                   color: Colors.white, borderRadius: BorderRadius.circular(3),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 4)],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 4)],
                 ),
               ),
             ),
@@ -959,7 +959,7 @@ class _MetricCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.07),
+                      color: Colors.white.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text('확인', style: TextStyle(color: Colors.white54, fontSize: 13)),
@@ -980,7 +980,7 @@ class _MetricCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF111111),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
