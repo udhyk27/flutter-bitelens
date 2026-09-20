@@ -87,32 +87,37 @@ class _AnimatedSplashState extends State<AnimatedSplash> {
   static const _configTimeout = Duration(seconds: 3);
 
   Future<void> _initializeData() async {
+    // 스플래시 최소 노출과 Remote Config 로드를 병렬 처리
+    // → 홈 진입 시점에 store/약관 URL, ai_model 값이 준비됨.
+    // RC는 상한을 둬, 느린 네트워크에서 스플래시가 최대 fetchTimeout(10s)까지
+    // 멈추지 않게 한다(초과 시 기본/이전 값으로 진행 — RC는 이미 방어됨).
     try {
-      // 스플래시 최소 노출과 Remote Config 로드를 병렬 처리
-      // → 홈 진입 시점에 store/약관 URL, ai_model 값이 준비됨.
-      // RC는 상한을 둬, 느린 네트워크에서 스플래시가 최대 fetchTimeout(10s)까지
-      // 멈추지 않게 한다(초과 시 기본/이전 값으로 진행 — RC는 이미 방어됨).
       await Future.wait([
         Future.delayed(_minSplash),
         Api().getRemoteConfig().timeout(_configTimeout, onTimeout: () {}),
       ]);
-
-      final prefs = await SharedPreferences.getInstance();
-      final onboardingDone = prefs.getBool('onboarding_done') ?? false;
-
-      if (!mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => onboardingDone
-              ? HomeScreen(cameras: _cameras)
-              : OnboardingScreen(cameras: _cameras),
-        ),
-      );
-    } catch (e, stack) {
-      debugPrint("초기화 에러: $e");
-      debugPrint("스택: $stack");
+    } catch (e) {
+      debugPrint('스플래시 초기화 경고: $e');
     }
+
+    // 온보딩 여부 조회 실패 시에도 진입은 계속(기본값: 온보딩 표시).
+    bool onboardingDone = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      onboardingDone = prefs.getBool('onboarding_done') ?? false;
+    } catch (e) {
+      debugPrint('온보딩 상태 조회 실패: $e');
+    }
+
+    // 어떤 초기화 실패에도 스플래시에 갇히지 않도록 네비게이션은 항상 수행.
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => onboardingDone
+            ? HomeScreen(cameras: _cameras)
+            : OnboardingScreen(cameras: _cameras),
+      ),
+    );
   }
 
   @override

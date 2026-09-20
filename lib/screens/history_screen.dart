@@ -108,6 +108,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
     final weekly = await DatabaseHelper.instance.getWeeklyHistory();
 
+    if (!mounted) return;
     setState(() {
       _history = List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e)));
       _weeklyData = weekly;
@@ -128,6 +129,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       since: _since,
     );
 
+    if (!mounted) return;
     setState(() {
       _history.addAll(data.map((e) => Map<String, dynamic>.from(e)));
       _hasMore = data.length == _pageSize;
@@ -139,6 +141,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     await DatabaseHelper.instance.deleteAnalysis(id);
     _history.removeWhere((e) => e['id'] == id);
     final weekly = await DatabaseHelper.instance.getWeeklyHistory();
+    if (!mounted) return;
     setState(() { _weeklyData = weekly; });
   }
 
@@ -156,6 +159,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     await DatabaseHelper.instance
         .updateAnalysis(id, result: newResult, meal: res.meal);
 
+    if (!mounted) return;
     final idx = _history.indexWhere((e) => e['id'] == id);
     if (idx != -1) {
       final updated = Map<String, dynamic>.from(_history[idx]);
@@ -169,6 +173,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _toggleFavorite(int id, bool current) async {
     await DatabaseHelper.instance.toggleFavorite(id, !current);
+    if (!mounted) return;
     final idx = _history.indexWhere((e) => e['id'] == id);
     if (idx == -1) return;
     setState(() {

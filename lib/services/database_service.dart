@@ -71,18 +71,22 @@ class DatabaseHelper {
           // 이후 검색은 food_name 컬럼을 사용한다.
           final rows =
               await db.query('analysis_history', columns: ['id', 'result']);
+          // 개별 update를 순차 실행하면 대량 기록에서 지연/ANR이 발생하므로
+          // batch로 묶어 한 번에 커밋한다(onUpgrade는 이미 트랜잭션 내부).
+          final batch = db.batch();
           for (final r in rows) {
             final result = r['result'] as String?;
             if (result == null) continue;
             final (foodName, calories) = _extractSummary(result);
             if (foodName == null && calories == null) continue;
-            await db.update(
+            batch.update(
               'analysis_history',
               {'food_name': foodName, 'calories': calories?.toString()},
               where: 'id = ?',
               whereArgs: [r['id']],
             );
           }
+          await batch.commit(noResult: true);
         }
       },
     );

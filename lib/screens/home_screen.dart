@@ -20,7 +20,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   CameraController? controller;
   bool _isInitialized = false;
   bool _cameraPermissionDenied = false;
@@ -36,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _pulseController = AnimationController(
       vsync: this,
@@ -84,9 +86,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     controller?.dispose();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  /// 앱 생명주기에 맞춰 카메라 자원을 관리한다.
+  /// OS가 백그라운드에서 카메라를 회수하므로, 비활성 시 해제하고 복귀 시
+  /// 재초기화하지 않으면 복귀 후 프리뷰가 검은 화면으로 멈춘다.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final cam = controller;
+    // 카메라를 못 쓰는 상태(권한 거부/무카메라)면 관여하지 않음
+    if (_cameraPermissionDenied || widget.cameras.isEmpty) return;
+
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      if (cam != null) {
+        controller = null;
+        _isInitialized = false;
+        cam.dispose();
+        if (mounted) setState(() {});
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (controller == null) _initCamera();
+    }
   }
 
   Future<void> _openAppSettings() async {

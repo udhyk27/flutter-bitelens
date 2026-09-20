@@ -783,10 +783,13 @@ class _FramePainter extends CustomPainter {
 /// 업로드용 이미지 준비(isolate에서 실행):
 /// 최대 1024px로 축소 후 JPEG(품질 85)로 인코딩해 전송량과 Gemini 입력 비용을 낮춘다.
 Uint8List _prepareImage(Uint8List bytes) {
-  final decoded = img.decodeImage(bytes);
-  if (decoded == null) {
+  final raw = img.decodeImage(bytes);
+  if (raw == null) {
     throw Exception('이미지 디코딩에 실패했습니다. 지원하지 않는 형식일 수 있습니다.');
   }
+  // EXIF 방향을 픽셀에 반영(굽기) — 눕힌 세로 사진이 그대로 전송돼
+  // Gemini 분석 정확도가 떨어지는 문제 방지. 인코딩 시 EXIF는 사라지므로 필수.
+  final decoded = img.bakeOrientation(raw);
   const maxDim = 1024;
   img.Image out = decoded;
   if (decoded.width > maxDim || decoded.height > maxDim) {
