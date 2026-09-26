@@ -245,6 +245,38 @@ class DatabaseHelper {
     return (clauses.join(' AND '), args);
   }
 
+  /// 필터를 반영한 날짜별(로컬 'yyyy-MM-dd') 칼로리 합계.
+  /// created_at은 로컬 시각을 timezone 없이 저장하므로 앞 10자가 로컬 날짜다.
+  /// 페이지네이션과 무관하게 그날 전체 합을 반환해, 히스토리 일자 헤더가
+  /// 로드된 일부만 합산하던 과소 집계 문제를 해결한다.
+  Future<Map<String, int>> getDailyCalorieTotals({
+    bool favoritesOnly = false,
+    String? query,
+    DateTime? since,
+  }) async {
+    final db = await database;
+    final (where, args) = _buildFilter(
+      favoritesOnly: favoritesOnly,
+      query: query,
+      since: since,
+    );
+    final rows = await db.rawQuery(
+      'SELECT substr(created_at, 1, 10) AS d, '
+      'SUM(CAST(calories AS INTEGER)) AS total '
+      'FROM analysis_history'
+      '${where != null ? ' WHERE $where' : ''} '
+      'GROUP BY d',
+      args,
+    );
+    final map = <String, int>{};
+    for (final r in rows) {
+      final d = r['d'] as String?;
+      final total = (r['total'] as num?)?.toInt();
+      if (d != null && total != null) map[d] = total;
+    }
+    return map;
+  }
+
   /// 전체 기록 수 조회
   Future<int> getAnalysisCount({bool favoritesOnly = false}) async {
     final db = await database;

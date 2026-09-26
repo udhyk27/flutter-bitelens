@@ -29,6 +29,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   List<Map<String, dynamic>> _history = [];
   List<Map<String, dynamic>> _weeklyData = [];
+  // 날짜('yyyy-MM-dd')별 칼로리 합계 — 페이지네이션과 무관한 그날 전체 합
+  Map<String, int> _dailyTotals = {};
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
@@ -107,11 +109,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
       since: _since,
     );
     final weekly = await DatabaseHelper.instance.getWeeklyHistory();
+    final dailyTotals = await DatabaseHelper.instance.getDailyCalorieTotals(
+      favoritesOnly: _showFavoritesOnly,
+      query: _searchQuery,
+      since: _since,
+    );
 
     if (!mounted) return;
     setState(() {
       _history = List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e)));
       _weeklyData = weekly;
+      _dailyTotals = dailyTotals;
       _isLoading = false;
       _hasMore = data.length == _pageSize;
     });
@@ -141,8 +149,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     await DatabaseHelper.instance.deleteAnalysis(id);
     _history.removeWhere((e) => e['id'] == id);
     final weekly = await DatabaseHelper.instance.getWeeklyHistory();
+    final dailyTotals = await DatabaseHelper.instance.getDailyCalorieTotals(
+      favoritesOnly: _showFavoritesOnly,
+      query: _searchQuery,
+      since: _since,
+    );
     if (!mounted) return;
-    setState(() { _weeklyData = weekly; });
+    setState(() { _weeklyData = weekly; _dailyTotals = dailyTotals; });
   }
 
   Future<void> _editItem(Map<String, dynamic> item) async {
@@ -168,7 +181,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       setState(() => _history[idx] = updated);
     }
     final weekly = await DatabaseHelper.instance.getWeeklyHistory();
-    if (mounted) setState(() { _weeklyData = weekly; });
+    final dailyTotals = await DatabaseHelper.instance.getDailyCalorieTotals(
+      favoritesOnly: _showFavoritesOnly,
+      query: _searchQuery,
+      since: _since,
+    );
+    if (mounted) setState(() { _weeklyData = weekly; _dailyTotals = dailyTotals; });
   }
 
   Future<void> _toggleFavorite(int id, bool current) async {
@@ -300,9 +318,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
                   final dateKey = dateKeys[adjustedIndex];
                   final items = grouped[dateKey]!;
-                  final totalCal = items.fold<int>(0, (sum, item) {
-                    return sum + (NutritionParser.parseCaloriesInt(item['result'] as String) ?? 0);
-                  });
+                  // 그날 전체 합(DB 집계). 집계에 없는 경우(레거시 등)만
+                  // 로드된 항목 합산으로 폴백.
+                  final rawDate = items.first['created_at'] as String;
+                  final dayKey =
+                      rawDate.length >= 10 ? rawDate.substring(0, 10) : rawDate;
+                  final totalCal = _dailyTotals[dayKey] ??
+                      items.fold<int>(0, (sum, item) {
+                        return sum +
+                            (NutritionParser.parseCaloriesInt(
+                                    item['result'] as String) ??
+                                0);
+                      });
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
