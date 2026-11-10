@@ -35,6 +35,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   bool _showFavoritesOnly = false;
+  // 새 필터/검색이 시작되면 이전 DB 요청 결과는 화면에 적용하지 않는다.
+  int _loadGeneration = 0;
   double? _tdee;
   late ScrollController _scrollController;
 
@@ -97,52 +99,73 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _loadInitial() async {
-    setState(() { _isLoading = true; _hasMore = true; });
-    final prefs = await SharedPreferences.getInstance();
-    _tdee = prefs.getDouble('tdee');
-
-    final data = await DatabaseHelper.instance.getAnalysisHistoryPaged(
-      limit: _pageSize,
-      offset: 0,
-      favoritesOnly: _showFavoritesOnly,
-      query: _searchQuery,
-      since: _since,
-    );
-    final weekly = await DatabaseHelper.instance.getWeeklyHistory();
-    final dailyTotals = await DatabaseHelper.instance.getDailyCalorieTotals(
-      favoritesOnly: _showFavoritesOnly,
-      query: _searchQuery,
-      since: _since,
-    );
-
-    if (!mounted) return;
+    final generation = ++_loadGeneration;
     setState(() {
-      _history = List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e)));
-      _weeklyData = weekly;
-      _dailyTotals = dailyTotals;
-      _isLoading = false;
-      _hasMore = data.length == _pageSize;
+      _isLoading = true;
+      _isLoadingMore = false;
+      _hasMore = true;
     });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final tdee = prefs.getDouble('tdee');
+      final data = await DatabaseHelper.instance.getAnalysisHistoryPaged(
+        limit: _pageSize,
+        offset: 0,
+        favoritesOnly: _showFavoritesOnly,
+        query: _searchQuery,
+        since: _since,
+      );
+      final weekly = await DatabaseHelper.instance.getWeeklyHistory();
+      final dailyTotals = await DatabaseHelper.instance.getDailyCalorieTotals(
+        favoritesOnly: _showFavoritesOnly,
+        query: _searchQuery,
+        since: _since,
+      );
+
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _tdee = tdee;
+        _history = List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e)));
+        _weeklyData = weekly;
+        _dailyTotals = dailyTotals;
+        _isLoading = false;
+        _hasMore = data.length == _pageSize;
+      });
+    } catch (e) {
+      if (!mounted || generation != _loadGeneration) return;
+      debugPrint('기록 불러오기 오류: $e');
+      setState(() { _isLoading = false; _hasMore = false; });
+    }
   }
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
+    final generation = _loadGeneration;
     setState(() => _isLoadingMore = true);
 
-    final data = await DatabaseHelper.instance.getAnalysisHistoryPaged(
-      limit: _pageSize,
-      offset: _history.length,
-      favoritesOnly: _showFavoritesOnly,
-      query: _searchQuery,
-      since: _since,
-    );
+    try {
+      final data = await DatabaseHelper.instance.getAnalysisHistoryPaged(
+        limit: _pageSize,
+        offset: _history.length,
+        favoritesOnly: _showFavoritesOnly,
+        query: _searchQuery,
+        since: _since,
+      );
 
-    if (!mounted) return;
-    setState(() {
-      _history.addAll(data.map((e) => Map<String, dynamic>.from(e)));
-      _hasMore = data.length == _pageSize;
-      _isLoadingMore = false;
-    });
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _history.addAll(data.map((e) => Map<String, dynamic>.from(e)));
+        _hasMore = data.length == _pageSize;
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted || generation != _loadGeneration) return;
+      debugPrint('기록 추가 불러오기 오류: $e');
+      setState(() {
+        _isLoadingMore = false;
+        _hasMore = false;
+      });
+    }
   }
 
   Future<void> _deleteItem(int id) async {

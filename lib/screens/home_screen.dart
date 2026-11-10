@@ -128,6 +128,7 @@ class _HomeScreenState extends State<HomeScreen>
     final height = prefs.getString('height') ?? '';
     final weight = prefs.getString('weight') ?? '';
     final age = prefs.getString('age') ?? '';
+    if (!mounted) return;
     setState(() => _isProfileSet = height.isNotEmpty && weight.isNotEmpty && age.isNotEmpty);
   }
 
