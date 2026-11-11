@@ -197,6 +197,20 @@ class DatabaseHelper {
     return await db.query('analysis_history', orderBy: 'created_at DESC');
   }
 
+  /// 하루 통계에 필요한 기록만 읽는다. 전체 기록을 메모리에 올리지 않도록
+  /// 저장된 로컬 ISO 날짜 문자열의 [start, next day) 범위로 제한한다.
+  Future<List<Map<String, dynamic>>> getAnalysisHistoryForDay(DateTime day) async {
+    final db = await database;
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return db.query(
+      'analysis_history',
+      where: 'created_at >= ? AND created_at < ?',
+      whereArgs: [start.toIso8601String(), end.toIso8601String()],
+      orderBy: 'created_at ASC',
+    );
+  }
+
   /// 페이지네이션 + 검색/필터 조회.
   /// [query]는 음식명 검색(food_name LIKE), [since]는 이 시각 이후 기록만.
   Future<List<Map<String, dynamic>>> getAnalysisHistoryPaged({

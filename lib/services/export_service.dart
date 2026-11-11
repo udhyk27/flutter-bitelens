@@ -31,7 +31,7 @@ class ExportService {
 
     final buf = StringBuffer();
     buf.write('﻿'); // Excel에서 한글 깨짐 방지
-    buf.writeln(_headers.map(_escape).join(','));
+    buf.writeln(_headers.map((value) => _escape(value)).join(','));
 
     for (final r in sorted) {
       final created = DateTime.tryParse(r['created_at'] as String? ?? '')?.toLocal();
@@ -56,7 +56,12 @@ class ExportService {
         _num(a.portion),
         fav,
       ];
-      buf.writeln(cols.map(_escape).join(','));
+      buf.writeln(cols.asMap().entries.map((entry) {
+        // 사용자가 입력하거나 AI가 반환한 텍스트가 스프레드시트 수식으로
+        // 해석되지 않도록 음식명/끼니 문자열만 안전한 텍스트로 내보낸다.
+        final isTextInput = entry.key == 2 || entry.key == 3;
+        return _escape(entry.value, protectFormula: isTextInput);
+      }).join(','));
     }
     return buf.toString();
   }
@@ -81,8 +86,11 @@ class ExportService {
     return v == v.roundToDouble() ? v.toInt().toString() : v.toString();
   }
 
-  static String _escape(Object? value) {
-    final s = value?.toString() ?? '';
+  static String _escape(Object? value, {bool protectFormula = false}) {
+    var s = value?.toString() ?? '';
+    if (protectFormula && RegExp(r'^[\u0000-\u0020\u00A0\uFEFF]*[=+@\-]').hasMatch(s)) {
+      s = "'$s";
+    }
     if (s.contains(',') || s.contains('"') || s.contains('\n') || s.contains('\r')) {
       return '"${s.replaceAll('"', '""')}"';
     }

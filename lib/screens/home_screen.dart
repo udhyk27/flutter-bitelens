@@ -5,6 +5,7 @@ import 'package:bitelens/screens/profile_screen.dart';
 import 'package:bitelens/screens/result_screen.dart';
 import 'package:bitelens/screens/settings_screen.dart';
 import 'package:bitelens/services/database_service.dart';
+import 'package:bitelens/widgets/profile_nudge_banner.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -138,19 +139,16 @@ class _HomeScreenState extends State<HomeScreen>
     final carbGoal = prefs.getDouble('carb_goal');
     final proteinGoal = prefs.getDouble('protein_goal');
     final fatGoal = prefs.getDouble('fat_goal');
-    final history = await DatabaseHelper.instance.getAnalysisHistory();
     final now = DateTime.now();
+    final history = await DatabaseHelper.instance.getAnalysisHistoryForDay(now);
     int todayCal = 0;
     double carbs = 0, protein = 0, fat = 0;
     for (final r in history) {
-      final dt = DateTime.parse(r['created_at'] as String).toLocal();
-      if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
-        final a = FoodAnalysis.parse(r['result'] as String);
-        todayCal += a.calories ?? 0;
-        carbs += a.carbs ?? 0;
-        protein += a.protein ?? 0;
-        fat += a.fat ?? 0;
-      }
+      final a = FoodAnalysis.parse(r['result'] as String);
+      todayCal += a.calories ?? 0;
+      carbs += a.carbs ?? 0;
+      protein += a.protein ?? 0;
+      fat += a.fat ?? 0;
     }
     if (!mounted) return;
     setState(() {

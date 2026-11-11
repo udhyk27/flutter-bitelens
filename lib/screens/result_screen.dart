@@ -14,6 +14,7 @@ import '../models/food_analysis.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
 import '../widgets/analysis_edit_sheet.dart';
+import '../widgets/profile_nudge_banner.dart';
 
 /// 분석 실패 사유를 사용자에게 그대로 전달하기 위한 예외.
 /// 상태코드별 메시지가 일반 catch(e)에서 "분석 중 오류"로 뭉개지지 않도록
@@ -704,42 +705,6 @@ class _TdeeBanner extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── 프로필 미설정 유도 배너 ─────────────────────────────────────────
-
-class ProfileNudgeBanner extends StatelessWidget {
-  final VoidCallback onTap;
-  const ProfileNudgeBanner({super.key, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.deepOrange.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.deepOrange.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.person_add_outlined, color: Colors.deepOrange, size: 18),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                '프로필을 설정하면 칼로리 기준이 맞춤 설정돼요',
-                style: TextStyle(color: Colors.deepOrange, fontSize: 12, height: 1.4),
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.deepOrange, size: 16),
-          ],
-        ),
       ),
     );
   }
