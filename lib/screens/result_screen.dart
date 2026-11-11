@@ -14,7 +14,6 @@ import '../models/food_analysis.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
 import '../widgets/analysis_edit_sheet.dart';
-import '../widgets/profile_nudge_banner.dart';
 
 /// 분석 실패 사유를 사용자에게 그대로 전달하기 위한 예외.
 /// 상태코드별 메시지가 일반 catch(e)에서 "분석 중 오류"로 뭉개지지 않도록
