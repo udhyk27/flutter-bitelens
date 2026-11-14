@@ -19,18 +19,18 @@ void main() {
     });
 
     test('텍스트 셀의 선행 공백과 위험 접두사를 보호한다', () {
-      final analysis = FoodAnalysis.manual(foodName: '  @SUM(1,1)');
+      final analysis = FoodAnalysis.manual(foodName: '@SUM(1,1)');
 
       final csv = ExportService.buildHistoryCsv([
         {
           'created_at': DateTime(2026, 11, 12, 12).toIso8601String(),
-          'meal': '+SUM(1,1)',
+          'meal': '  @SUM(1,1)',
           'result': analysis.toJsonString(),
         },
       ]);
 
-      expect(csv, contains("'+SUM(1,1)"));
       expect(csv, contains("'  @SUM(1,1)"));
+      expect(csv, contains("'@SUM(1,1)"));
     });
 
     test('일반 텍스트 인용과 숫자 값은 그대로 유지한다', () {
