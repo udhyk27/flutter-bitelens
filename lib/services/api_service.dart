@@ -2,7 +2,6 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 
 class Api {
-
   // --- 싱글톤 ---
   static final Api _instance = Api._internal();
   // → 클래스당 한 번만 생성되는 유일한 인스턴스
@@ -16,23 +15,35 @@ class Api {
   //   private 생성자
 
   // 인스턴스에 변수 저장
-  String appVersion = "";
+  static const _defaultAiModel = 'gemini-2.5-flash-lite';
+  static const _defaultAppVersion = '1.0.1';
+
+  String appVersion = _defaultAppVersion;
   String storeUrl = "";
-  String aiModel = "";
+  String aiModel = _defaultAiModel;
   String privacyUrl = "";
   String termsUrl = "";
 
   Future<void> getRemoteConfig() async {
-
     try {
       final FirebaseRemoteConfig rc = FirebaseRemoteConfig.instance;
-      await rc.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10),
-        // 개발 중엔 즉시 반영(zero), 릴리스에선 매 실행 fetch를 피해
-        // 스플래시 지연·데이터 소모·rate limit을 줄인다.
-        minimumFetchInterval:
-            kDebugMode ? Duration.zero : const Duration(hours: 1),
-      ));
+      await rc.setDefaults({
+        'ai_model': _defaultAiModel,
+        'app_version_aos': _defaultAppVersion,
+        'store_aos': '',
+        'privacy': '',
+        'terms': '',
+      });
+      await rc.setConfigSettings(
+        RemoteConfigSettings(
+          fetchTimeout: const Duration(seconds: 10),
+          // 개발 중엔 즉시 반영(zero), 릴리스에선 매 실행 fetch를 피해
+          // 스플래시 지연·데이터 소모·rate limit을 줄인다.
+          minimumFetchInterval: kDebugMode
+              ? Duration.zero
+              : const Duration(hours: 1),
+        ),
+      );
 
       await rc.fetchAndActivate();
 
@@ -41,7 +52,6 @@ class Api {
       storeUrl = rc.getString('store_aos');
       privacyUrl = rc.getString('privacy');
       termsUrl = rc.getString('terms');
-
     } catch (e) {
       debugPrint('REMOTE CONFIG ERROR: $e');
     }

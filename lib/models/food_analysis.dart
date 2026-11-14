@@ -67,7 +67,9 @@ class FoodAnalysis {
     }
     final macros = <String>[];
     if (carbsText != null && carbsText != '-') macros.add('탄수화물 $carbsText');
-    if (proteinText != null && proteinText != '-') macros.add('단백질 $proteinText');
+    if (proteinText != null && proteinText != '-') {
+      macros.add('단백질 $proteinText');
+    }
     if (fatText != null && fatText != '-') macros.add('지방 $fatText');
     if (sodiumText != null && sodiumText != '-') macros.add('나트륨 $sodiumText');
     if (fiberText != null && fiberText != '-') macros.add('식이섬유 $fiberText');
@@ -143,16 +145,16 @@ class FoodAnalysis {
 
   /// DB의 `result` 컬럼에 저장할 JSON. [parse]로 그대로 복원된다.
   Map<String, dynamic> toJson() => {
-        if (foodName != null) 'foodName': foodName,
-        if (calories != null) 'calories': calories,
-        if (carbs != null) 'carbohydrates': carbs,
-        if (protein != null) 'protein': protein,
-        if (fat != null) 'fat': fat,
-        if (sodium != null) 'sodium': sodium,
-        if (fiber != null) 'fiber': fiber,
-        if (note != null) 'note': note,
-        'portion': portion,
-      };
+    if (foodName != null) 'foodName': foodName,
+    if (calories != null) 'calories': calories,
+    if (carbs != null) 'carbohydrates': carbs,
+    if (protein != null) 'protein': protein,
+    if (fat != null) 'fat': fat,
+    if (sodium != null) 'sodium': sodium,
+    if (fiber != null) 'fiber': fiber,
+    if (note != null) 'note': note,
+    'portion': portion,
+  };
 
   String toJsonString() => jsonEncode(toJson());
 
@@ -224,17 +226,20 @@ class FoodAnalysis {
   // ─── 레거시 자연어 포맷 ───────────────────────────────────
 
   factory FoodAnalysis._fromLegacy(String raw) {
-    String? field(String key) {
+    String? field(List<String> keys) {
       for (final line in raw.split('\n')) {
-        if (line.contains(key)) {
-          final parts = line.split(':');
-          if (parts.length > 1) {
-            String val = parts[1].trim();
-            if (val.contains('(')) {
-              val = val.substring(0, val.indexOf('(')).trim();
-            }
-            return val.isEmpty ? null : val;
+        // 초기 앱은 자연어 응답을 그대로 저장했다. 당시 응답 언어가
+        // 한국어/영어/일본어 중 하나였으므로, 기존 기록도 모두 복원한다.
+        final normalized = line.replaceAll('：', ':');
+        for (final key in keys) {
+          if (!normalized.contains(key)) continue;
+          final parts = normalized.split(':');
+          if (parts.length <= 1) continue;
+          String val = parts.sublist(1).join(':').trim();
+          if (val.contains('(')) {
+            val = val.substring(0, val.indexOf('(')).trim();
           }
+          return val.isEmpty ? null : val;
         }
       }
       return null;
@@ -246,21 +251,27 @@ class FoodAnalysis {
       return m != null ? double.tryParse(m.group(1)!) : null;
     }
 
-    final calText = field('칼로리') ?? field('예상 칼로리');
+    final calText = field([
+      '예상 칼로리',
+      '칼로리',
+      'Estimated calories',
+      'Calories',
+      '推定カロリー',
+    ]);
     int? calInt;
     if (calText != null) {
       final m = RegExp(r'(\d+)').firstMatch(calText);
       calInt = m != null ? int.tryParse(m.group(1)!) : null;
     }
 
-    final carbsText = field('탄수화물');
-    final proteinText = field('단백질');
-    final fatText = field('지방');
-    final sodiumText = field('나트륨');
-    final fiberText = field('식이섬유');
+    final carbsText = field(['탄수화물', 'Carbohydrates', '炭水化物']);
+    final proteinText = field(['단백질', 'Protein', 'タンパク質']);
+    final fatText = field(['지방', 'Fat', '脂肪']);
+    final sodiumText = field(['나트륨', 'Sodium', 'ナトリウム']);
+    final fiberText = field(['식이섬유', 'Dietary fiber', '食物繊維']);
 
     return FoodAnalysis(
-      foodName: field('음식 이름'),
+      foodName: field(['음식 이름', 'Food name', '料理名']),
       calories: calInt,
       carbs: gramsOf(carbsText),
       protein: gramsOf(proteinText),

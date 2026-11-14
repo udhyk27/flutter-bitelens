@@ -20,7 +20,9 @@ void main() {
     });
 
     test('carbs 별칭 키도 인식한다', () {
-      final a = FoodAnalysis.parse('{"foodName":"밥","calories":300,"carbs":60}');
+      final a = FoodAnalysis.parse(
+        '{"foodName":"밥","calories":300,"carbs":60}',
+      );
       expect(a.carbs, 60);
     });
 
@@ -75,12 +77,34 @@ void main() {
 
   group('FoodAnalysis.parse - 레거시 자연어 포맷', () {
     test('음식 이름/칼로리/탄수화물 라인을 추출한다', () {
-      final a = FoodAnalysis.parse(
-        '음식 이름: 라면\n칼로리: 500 kcal\n탄수화물: 70g',
-      );
+      final a = FoodAnalysis.parse('음식 이름: 라면\n칼로리: 500 kcal\n탄수화물: 70g');
       expect(a.foodName, '라면');
       expect(a.calories, 500);
       expect(a.carbs, 70);
+    });
+
+    test('영어 레거시 응답을 파싱한다', () {
+      final a = FoodAnalysis.parse(
+        'Food name: Pasta\nEstimated calories: 650 kcal\n'
+        'Carbohydrates: 75g\nProtein: 22g\nFat: 18g',
+      );
+      expect(a.foodName, 'Pasta');
+      expect(a.calories, 650);
+      expect(a.carbs, 75);
+      expect(a.protein, 22);
+      expect(a.fat, 18);
+    });
+
+    test('일본어 레거시 응답의 전각 콜론을 파싱한다', () {
+      final a = FoodAnalysis.parse(
+        '料理名：カレーライス\n推定カロリー：700 kcal\n'
+        '炭水化物：90g\nタンパク質：18g\n脂肪：20g',
+      );
+      expect(a.foodName, 'カレーライス');
+      expect(a.calories, 700);
+      expect(a.carbs, 90);
+      expect(a.protein, 18);
+      expect(a.fat, 20);
     });
   });
 }

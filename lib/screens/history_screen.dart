@@ -45,7 +45,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   _DateFilter _dateFilter = _DateFilter.all;
   Timer? _debounce;
 
-  bool get _isFiltering => _searchQuery.isNotEmpty || _dateFilter != _DateFilter.all;
+  bool get _isFiltering =>
+      _searchQuery.isNotEmpty || _dateFilter != _DateFilter.all;
 
   DateTime? get _since {
     final now = DateTime.now();
@@ -125,7 +126,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _tdee = tdee;
-        _history = List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e)));
+        _history = List<Map<String, dynamic>>.from(
+          data.map((e) => Map<String, dynamic>.from(e)),
+        );
         _weeklyData = weekly;
         _dailyTotals = dailyTotals;
         _isLoading = false;
@@ -134,7 +137,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (e) {
       if (!mounted || generation != _loadGeneration) return;
       debugPrint('기록 불러오기 오류: $e');
-      setState(() { _isLoading = false; _hasMore = false; });
+      setState(() {
+        _isLoading = false;
+        _hasMore = false;
+      });
     }
   }
 
@@ -170,15 +176,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _deleteItem(int id) async {
     await DatabaseHelper.instance.deleteAnalysis(id);
-    _history.removeWhere((e) => e['id'] == id);
-    final weekly = await DatabaseHelper.instance.getWeeklyHistory();
-    final dailyTotals = await DatabaseHelper.instance.getDailyCalorieTotals(
-      favoritesOnly: _showFavoritesOnly,
-      query: _searchQuery,
-      since: _since,
-    );
     if (!mounted) return;
-    setState(() { _weeklyData = weekly; _dailyTotals = dailyTotals; });
+    // OFFSET 페이지네이션에서는 중간 행을 제거한 뒤 기존 목록을 유지하면
+    // 다음 페이지 로드 시 중복/누락이 생길 수 있다. 필터 상태 그대로 재조회한다.
+    await _loadInitial();
   }
 
   Future<void> _editItem(Map<String, dynamic> item) async {
@@ -186,14 +187,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final result = item['result'] as String;
     final createdAt = item['created_at'] as String;
     final analysis = FoodAnalysis.parse(result);
-    final meal = (item['meal'] as String?) ?? NutritionParser.mealType(createdAt);
+    final meal =
+        (item['meal'] as String?) ?? NutritionParser.mealType(createdAt);
 
-    final res = await showAnalysisEditSheet(context, analysis: analysis, meal: meal);
+    final res = await showAnalysisEditSheet(
+      context,
+      analysis: analysis,
+      meal: meal,
+    );
     if (res == null || !mounted) return;
 
     final newResult = res.analysis.toJsonString();
-    await DatabaseHelper.instance
-        .updateAnalysis(id, result: newResult, meal: res.meal);
+    await DatabaseHelper.instance.updateAnalysis(
+      id,
+      result: newResult,
+      meal: res.meal,
+    );
 
     if (!mounted) return;
     final idx = _history.indexWhere((e) => e['id'] == id);
@@ -209,22 +218,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
       query: _searchQuery,
       since: _since,
     );
-    if (mounted) setState(() { _weeklyData = weekly; _dailyTotals = dailyTotals; });
+    if (mounted) {
+      setState(() {
+        _weeklyData = weekly;
+        _dailyTotals = dailyTotals;
+      });
+    }
   }
 
   Future<void> _toggleFavorite(int id, bool current) async {
     await DatabaseHelper.instance.toggleFavorite(id, !current);
     if (!mounted) return;
-    final idx = _history.indexWhere((e) => e['id'] == id);
-    if (idx == -1) return;
-    setState(() {
-      _history[idx] = Map<String, dynamic>.from(_history[idx])
-        ..['is_favorite'] = current ? 0 : 1;
-    });
-    // 즐겨찾기 필터 중이면 목록에서 제거
-    if (_showFavoritesOnly && current) {
-      setState(() => _history.removeAt(idx));
-    }
+    // 즐겨찾기 필터·일일 합계·페이지 offset을 한 번에 일관되게 갱신한다.
+    await _loadInitial();
   }
 
   Map<String, List<Map<String, dynamic>>> _groupByDate() {
@@ -269,7 +275,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         title: const Text(
           'HISTORY',
-          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 6),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 6,
+          ),
         ),
         centerTitle: true,
         actions: [
@@ -290,7 +301,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(8),
@@ -309,98 +323,137 @@ class _HistoryScreenState extends State<HistoryScreen> {
           _buildSearchFilterBar(),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 1))
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 1,
+                    ),
+                  )
                 : RefreshIndicator(
-        color: Colors.deepOrange,
-        backgroundColor: const Color(0xFF1A1A1A),
-        onRefresh: _loadInitial,
-        child: _history.isEmpty
-            ? _buildEmpty()
-            : ListView.builder(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-                itemCount: dateKeys.length + (showChart ? 1 : 0) + (_isLoadingMore ? 1 : 0),
-                itemBuilder: (context, i) {
-                  // 주간 차트 (맨 위)
-                  if (i == 0 && showChart) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _WeeklyCalChart(weeklyHistory: _weeklyData, tdee: _tdee),
-                    );
-                  }
-                  final adjustedIndex = showChart ? i - 1 : i;
+                    color: Colors.deepOrange,
+                    backgroundColor: const Color(0xFF1A1A1A),
+                    onRefresh: _loadInitial,
+                    child: _history.isEmpty
+                        ? _buildEmpty()
+                        : ListView.builder(
+                            controller: _scrollController,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+                            itemCount:
+                                dateKeys.length +
+                                (showChart ? 1 : 0) +
+                                (_isLoadingMore ? 1 : 0),
+                            itemBuilder: (context, i) {
+                              // 주간 차트 (맨 위)
+                              if (i == 0 && showChart) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _WeeklyCalChart(
+                                    weeklyHistory: _weeklyData,
+                                    tdee: _tdee,
+                                  ),
+                                );
+                              }
+                              final adjustedIndex = showChart ? i - 1 : i;
 
-                  // 로딩 인디케이터 (맨 아래)
-                  if (adjustedIndex == dateKeys.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: CircularProgressIndicator(color: Colors.white24, strokeWidth: 1.5)),
-                    );
-                  }
+                              // 로딩 인디케이터 (맨 아래)
+                              if (adjustedIndex == dateKeys.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white24,
+                                      strokeWidth: 1.5,
+                                    ),
+                                  ),
+                                );
+                              }
 
-                  final dateKey = dateKeys[adjustedIndex];
-                  final items = grouped[dateKey]!;
-                  // 그날 전체 합(DB 집계). 집계에 없는 경우(레거시 등)만
-                  // 로드된 항목 합산으로 폴백.
-                  final rawDate = items.first['created_at'] as String;
-                  final dayKey =
-                      rawDate.length >= 10 ? rawDate.substring(0, 10) : rawDate;
-                  final totalCal = _dailyTotals[dayKey] ??
-                      items.fold<int>(0, (sum, item) {
-                        return sum +
-                            (NutritionParser.parseCaloriesInt(
-                                    item['result'] as String) ??
-                                0);
-                      });
+                              final dateKey = dateKeys[adjustedIndex];
+                              final items = grouped[dateKey]!;
+                              // 그날 전체 합(DB 집계). 집계에 없는 경우(레거시 등)만
+                              // 로드된 항목 합산으로 폴백.
+                              final rawDate =
+                                  items.first['created_at'] as String;
+                              final dayKey = rawDate.length >= 10
+                                  ? rawDate.substring(0, 10)
+                                  : rawDate;
+                              final totalCal =
+                                  _dailyTotals[dayKey] ??
+                                  items.fold<int>(0, (sum, item) {
+                                    return sum +
+                                        (NutritionParser.parseCaloriesInt(
+                                              item['result'] as String,
+                                            ) ??
+                                            0);
+                                  });
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(4, 16, 4, 10),
-                        child: Row(
-                          children: [
-                            Text(
-                              dateKey,
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Container(height: 0.5, width: 20, color: Colors.white12),
-                            const Spacer(),
-                            if (totalCal > 0)
-                              Text(
-                                '총 $totalCal kcal',
-                                style: const TextStyle(color: Colors.deepOrange, fontSize: 11),
-                              ),
-                          ],
-                        ),
-                      ),
-                      ...items.map((item) => _HistoryCard(
-                        id: item['id'] as int,
-                        imagePath: item['image_path'] as String,
-                        result: item['result'] as String,
-                        time: _timeLabel(item['created_at'] as String),
-                        createdAt: item['created_at'] as String,
-                        meal: item['meal'] as String?,
-                        isFavorite: (item['is_favorite'] as int? ?? 0) == 1,
-                        onDelete: () => _showDeleteDialog(item['id'] as int),
-                        onEdit: () => _editItem(item),
-                        onFavoriteToggle: () => _toggleFavorite(
-                          item['id'] as int,
-                          (item['is_favorite'] as int? ?? 0) == 1,
-                        ),
-                      )),
-                    ],
-                  );
-                },
-              ),
-      ),
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      4,
+                                      16,
+                                      4,
+                                      10,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          dateKey,
+                                          style: const TextStyle(
+                                            color: Colors.white54,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Container(
+                                          height: 0.5,
+                                          width: 20,
+                                          color: Colors.white12,
+                                        ),
+                                        const Spacer(),
+                                        if (totalCal > 0)
+                                          Text(
+                                            '총 $totalCal kcal',
+                                            style: const TextStyle(
+                                              color: Colors.deepOrange,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  ...items.map(
+                                    (item) => _HistoryCard(
+                                      id: item['id'] as int,
+                                      imagePath: item['image_path'] as String,
+                                      result: item['result'] as String,
+                                      time: _timeLabel(
+                                        item['created_at'] as String,
+                                      ),
+                                      createdAt: item['created_at'] as String,
+                                      meal: item['meal'] as String?,
+                                      isFavorite:
+                                          (item['is_favorite'] as int? ?? 0) ==
+                                          1,
+                                      onDelete: () =>
+                                          _showDeleteDialog(item['id'] as int),
+                                      onEdit: () => _editItem(item),
+                                      onFavoriteToggle: () => _toggleFavorite(
+                                        item['id'] as int,
+                                        (item['is_favorite'] as int? ?? 0) == 1,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                  ),
           ),
         ],
       ),
@@ -465,12 +518,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: GestureDetector(
                   onTap: () => _setDateFilter(f),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
-                      color: sel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.05),
+                      color: sel
+                          ? Colors.deepOrange
+                          : Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: sel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.08),
+                        color: sel
+                            ? Colors.deepOrange
+                            : Colors.white.withValues(alpha: 0.08),
                       ),
                     ),
                     child: Text(
@@ -500,20 +560,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
             _isFiltering
                 ? Icons.search_off
                 : (_showFavoritesOnly ? Icons.star_outline : Icons.history),
-            size: 56, color: Colors.white12,
+            size: 56,
+            color: Colors.white12,
           ),
           const SizedBox(height: 16),
           Text(
             _isFiltering
                 ? '조건에 맞는 기록이 없어요'
                 : (_showFavoritesOnly ? '즐겨찾기한 기록이 없어요' : '분석 기록이 없어요'),
-            style: const TextStyle(color: Colors.white30, fontSize: 15, letterSpacing: 1),
+            style: const TextStyle(
+              color: Colors.white30,
+              fontSize: 15,
+              letterSpacing: 1,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             _isFiltering
                 ? '검색어나 기간을 바꿔보세요'
-                : (_showFavoritesOnly ? '별표를 눌러 기록을 저장해보세요' : '음식을 촬영해서 분석해보세요'),
+                : (_showFavoritesOnly
+                      ? '별표를 눌러 기록을 저장해보세요'
+                      : '음식을 촬영해서 분석해보세요'),
             style: const TextStyle(color: Colors.white12, fontSize: 13),
           ),
         ],
@@ -527,16 +594,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('기록 삭제', style: TextStyle(color: Colors.white, fontSize: 16)),
-        content: const Text('이 기록을 삭제할까요?',
-            style: TextStyle(color: Colors.white54, fontSize: 14)),
+        title: const Text(
+          '기록 삭제',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        content: const Text(
+          '이 기록을 삭제할까요?',
+          style: TextStyle(color: Colors.white54, fontSize: 14),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('취소', style: TextStyle(color: Colors.white38)),
           ),
           TextButton(
-            onPressed: () { Navigator.pop(context); _deleteItem(id); },
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteItem(id);
+            },
             child: const Text('삭제', style: TextStyle(color: Colors.deepOrange)),
           ),
         ],
@@ -612,7 +687,8 @@ class _WeeklyCalChart extends StatelessWidget {
       final dt = DateTime.parse(item['created_at'] as String).toLocal();
       final key = DateTime(dt.year, dt.month, dt.day);
       if (calsByDay.containsKey(key)) {
-        calsByDay[key] = calsByDay[key]! +
+        calsByDay[key] =
+            calsByDay[key]! +
             (NutritionParser.parseCaloriesInt(item['result'] as String) ?? 0);
       }
     }
@@ -631,17 +707,31 @@ class _WeeklyCalChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            const Icon(Icons.bar_chart_rounded, color: Colors.white24, size: 13),
-            const SizedBox(width: 6),
-            const Text('이번 주 섭취 칼로리',
-                style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 1.5)),
-            if (tdee != null) ...[
-              const Spacer(),
-              Text('목표 ${tdee!.toStringAsFixed(0)} kcal',
-                  style: const TextStyle(color: Colors.white24, fontSize: 10)),
+          Row(
+            children: [
+              const Icon(
+                Icons.bar_chart_rounded,
+                color: Colors.white24,
+                size: 13,
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                '이번 주 섭취 칼로리',
+                style: TextStyle(
+                  color: Colors.white30,
+                  fontSize: 11,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              if (tdee != null) ...[
+                const Spacer(),
+                Text(
+                  '목표 ${tdee!.toStringAsFixed(0)} kcal',
+                  style: const TextStyle(color: Colors.white24, fontSize: 10),
+                ),
+              ],
             ],
-          ]),
+          ),
           const SizedBox(height: 14),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -655,7 +745,9 @@ class _WeeklyCalChart extends StatelessWidget {
               final overTdee = tdee != null && cal > tdee!;
               final barColor = isToday
                   ? (overTdee ? Colors.red.shade400 : Colors.deepOrange)
-                  : (cal > 0 ? Colors.white.withValues(alpha: 0.2) : Colors.transparent);
+                  : (cal > 0
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.transparent);
 
               return Expanded(
                 child: Column(
@@ -663,7 +755,9 @@ class _WeeklyCalChart extends StatelessWidget {
                   children: [
                     if (cal > 0)
                       Text(
-                        cal >= 1000 ? '${(cal / 1000).toStringAsFixed(1)}k' : '$cal',
+                        cal >= 1000
+                            ? '${(cal / 1000).toStringAsFixed(1)}k'
+                            : '$cal',
                         style: TextStyle(
                           color: isToday ? Colors.deepOrange : Colors.white24,
                           fontSize: 8,
@@ -688,7 +782,9 @@ class _WeeklyCalChart extends StatelessWidget {
                       style: TextStyle(
                         color: isToday ? Colors.deepOrange : Colors.white24,
                         fontSize: 10,
-                        fontWeight: isToday ? FontWeight.w700 : FontWeight.normal,
+                        fontWeight: isToday
+                            ? FontWeight.w700
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -753,14 +849,21 @@ class _HistoryCard extends StatelessWidget {
           children: [
             // 썸네일
             ClipRRect(
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(16),
+              ),
               child: SizedBox(
-                width: 86, height: 86,
+                width: 86,
+                height: 86,
                 child: File(imagePath).existsSync()
                     ? Image.file(File(imagePath), fit: BoxFit.cover)
                     : Container(
                         color: const Color(0xFF1E1E1E),
-                        child: const Icon(Icons.image_not_supported, color: Colors.white12, size: 24),
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          color: Colors.white12,
+                          size: 24,
+                        ),
                       ),
               ),
             ),
@@ -776,46 +879,84 @@ class _HistoryCard extends StatelessWidget {
                       children: [
                         // 식사 시간대 뱃지
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: mealColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(mealLabel,
-                              style: TextStyle(color: mealColor, fontSize: 9, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            mealLabel,
+                            style: TextStyle(
+                              color: mealColor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
-                          child: Text(foodName,
-                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            foodName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        Text(time, style: const TextStyle(color: Colors.white24, fontSize: 11)),
+                        Text(
+                          time,
+                          style: const TextStyle(
+                            color: Colors.white24,
+                            fontSize: 11,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 5),
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.deepOrange.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(calories,
-                              style: const TextStyle(color: Colors.deepOrange, fontSize: 11, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            calories,
+                            style: const TextStyle(
+                              color: Colors.deepOrange,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                         if (portion != 1.0) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               '×${portion == portion.roundToDouble() ? portion.toInt() : portion}',
-                              style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -824,11 +965,29 @@ class _HistoryCard extends StatelessWidget {
                     const SizedBox(height: 7),
                     Row(
                       children: [
-                        Flexible(child: _NutriBadge(label: '탄', value: carbs, color: Colors.blue.shade300)),
+                        Flexible(
+                          child: _NutriBadge(
+                            label: '탄',
+                            value: carbs,
+                            color: Colors.blue.shade300,
+                          ),
+                        ),
                         const SizedBox(width: 6),
-                        Flexible(child: _NutriBadge(label: '단', value: protein, color: Colors.green.shade400)),
+                        Flexible(
+                          child: _NutriBadge(
+                            label: '단',
+                            value: protein,
+                            color: Colors.green.shade400,
+                          ),
+                        ),
                         const SizedBox(width: 6),
-                        Flexible(child: _NutriBadge(label: '지', value: fat, color: Colors.orange.shade300)),
+                        Flexible(
+                          child: _NutriBadge(
+                            label: '지',
+                            value: fat,
+                            color: Colors.orange.shade300,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -852,7 +1011,11 @@ class _HistoryCard extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, color: Colors.white12, size: 18),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.white12,
+                    size: 18,
+                  ),
                   padding: const EdgeInsets.all(4),
                   constraints: const BoxConstraints(),
                 ),
@@ -885,27 +1048,45 @@ class _HistoryCard extends StatelessWidget {
               child: Row(
                 children: [
                   const Spacer(),
-                  Container(width: 36, height: 4,
-                      decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2))),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   Expanded(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.edit_outlined, color: Colors.white54, size: 20),
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            color: Colors.white54,
+                            size: 20,
+                          ),
                           onPressed: () {
                             Navigator.pop(context); // 상세 시트 닫고 편집 열기
                             onEdit();
                           },
                         ),
                         IconButton(
-                          icon: const Icon(Icons.ios_share, color: Colors.white54, size: 20),
+                          icon: const Icon(
+                            Icons.ios_share,
+                            color: Colors.white54,
+                            size: 20,
+                          ),
                           onPressed: () async {
                             try {
-                              await Share.shareXFiles([XFile(imagePath)],
-                                  text: FoodAnalysis.parse(result).displayText,
-                                  subject: 'BiteLens 음식 분석 결과');
-                            } catch (e) { debugPrint('공유 오류: $e'); }
+                              await Share.shareXFiles(
+                                [XFile(imagePath)],
+                                text: FoodAnalysis.parse(result).displayText,
+                                subject: 'BiteLens 음식 분석 결과',
+                              );
+                            } catch (e) {
+                              debugPrint('공유 오류: $e');
+                            }
                           },
                         ),
                       ],
@@ -925,21 +1106,48 @@ class _HistoryCard extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(14),
                       child: File(imagePath).existsSync()
-                          ? Image.file(File(imagePath),
-                              width: double.infinity, height: 200, fit: BoxFit.cover)
-                          : Container(height: 200, color: const Color(0xFF1E1E1E),
-                              child: const Center(child: Icon(Icons.image_not_supported, color: Colors.white12))),
+                          ? Image.file(
+                              File(imagePath),
+                              width: double.infinity,
+                              height: 200,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(
+                              height: 200,
+                              color: const Color(0xFF1E1E1E),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.white12,
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(height: 20),
                     _NutritionCard(result: result),
                     const SizedBox(height: 16),
-                    Row(children: [
-                      Container(width: 3, height: 18,
-                          decoration: BoxDecoration(color: Colors.deepOrange, borderRadius: BorderRadius.circular(2))),
-                      const SizedBox(width: 10),
-                      const Text('분석 결과',
-                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1)),
-                    ]),
+                    Row(
+                      children: [
+                        Container(
+                          width: 3,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrange,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          '분석 결과',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
@@ -947,10 +1155,18 @@ class _HistoryCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A1A1A),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.07),
+                        ),
                       ),
-                      child: Text(FoodAnalysis.parse(result).displayText,
-                          style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.8)),
+                      child: Text(
+                        FoodAnalysis.parse(result).displayText,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          height: 1.8,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -989,12 +1205,21 @@ class _NutritionCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Icon(Icons.local_fire_department_outlined, color: Colors.deepOrange, size: 18),
+              const Icon(
+                Icons.local_fire_department_outlined,
+                color: Colors.deepOrange,
+                size: 18,
+              ),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   NutritionParser.calories(result),
-                  style: const TextStyle(color: Colors.deepOrange, fontSize: 22, fontWeight: FontWeight.w700, height: 1),
+                  style: const TextStyle(
+                    color: Colors.deepOrange,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1004,29 +1229,65 @@ class _NutritionCard extends StatelessWidget {
 
           if (total > 0) ...[
             const SizedBox(height: 16),
-            _MacroBar(carbs: carbs ?? 0, protein: protein ?? 0, fat: fat ?? 0, total: total),
+            _MacroBar(
+              carbs: carbs ?? 0,
+              protein: protein ?? 0,
+              fat: fat ?? 0,
+              total: total,
+            ),
             const SizedBox(height: 14),
           ] else
             const SizedBox(height: 12),
 
           Row(
             children: [
-              Expanded(child: _MacroItem(label: '탄수화물', value: NutritionParser.carbs(result), color: Colors.blue.shade300)),
-              Expanded(child: _MacroItem(label: '단백질', value: NutritionParser.protein(result), color: Colors.green.shade400)),
-              Expanded(child: _MacroItem(label: '지방', value: NutritionParser.fat(result), color: Colors.orange.shade300)),
+              Expanded(
+                child: _MacroItem(
+                  label: '탄수화물',
+                  value: NutritionParser.carbs(result),
+                  color: Colors.blue.shade300,
+                ),
+              ),
+              Expanded(
+                child: _MacroItem(
+                  label: '단백질',
+                  value: NutritionParser.protein(result),
+                  color: Colors.green.shade400,
+                ),
+              ),
+              Expanded(
+                child: _MacroItem(
+                  label: '지방',
+                  value: NutritionParser.fat(result),
+                  color: Colors.orange.shade300,
+                ),
+              ),
             ],
           ),
 
-          if (NutritionParser.sodium(result) != '-' || NutritionParser.fiber(result) != '-') ...[
+          if (NutritionParser.sodium(result) != '-' ||
+              NutritionParser.fiber(result) != '-') ...[
             const SizedBox(height: 12),
             Container(height: 0.5, color: Colors.white.withValues(alpha: 0.06)),
             const SizedBox(height: 12),
             Row(
               children: [
                 if (NutritionParser.sodium(result) != '-')
-                  Expanded(child: _MacroItem(label: '나트륨', value: NutritionParser.sodium(result), color: Colors.yellow.shade600)),
+                  Expanded(
+                    child: _MacroItem(
+                      label: '나트륨',
+                      value: NutritionParser.sodium(result),
+                      color: Colors.yellow.shade600,
+                    ),
+                  ),
                 if (NutritionParser.fiber(result) != '-')
-                  Expanded(child: _MacroItem(label: '식이섬유', value: NutritionParser.fiber(result), color: Colors.teal.shade300)),
+                  Expanded(
+                    child: _MacroItem(
+                      label: '식이섬유',
+                      value: NutritionParser.fiber(result),
+                      color: Colors.teal.shade300,
+                    ),
+                  ),
               ],
             ),
           ],
@@ -1038,46 +1299,62 @@ class _NutritionCard extends StatelessWidget {
 
 class _MacroBar extends StatelessWidget {
   final double carbs, protein, fat, total;
-  const _MacroBar({required this.carbs, required this.protein, required this.fat, required this.total});
+  const _MacroBar({
+    required this.carbs,
+    required this.protein,
+    required this.fat,
+    required this.total,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final w = constraints.maxWidth;
-      final carbW = total > 0 ? (carbs / total * w) : 0.0;
-      final protW = total > 0 ? (protein / total * w) : 0.0;
-      final fatW = total > 0 ? (fat / total * w) : 0.0;
-      return Column(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: SizedBox(
-              height: 6,
-              child: Row(
-                children: [
-                  Container(width: carbW, color: Colors.blue.shade300),
-                  Container(width: protW, color: Colors.green.shade400),
-                  Container(width: fatW, color: Colors.orange.shade300),
-                ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final carbW = total > 0 ? (carbs / total * w) : 0.0;
+        final protW = total > 0 ? (protein / total * w) : 0.0;
+        final fatW = total > 0 ? (fat / total * w) : 0.0;
+        return Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: SizedBox(
+                height: 6,
+                child: Row(
+                  children: [
+                    Container(width: carbW, color: Colors.blue.shade300),
+                    Container(width: protW, color: Colors.green.shade400),
+                    Container(width: fatW, color: Colors.orange.shade300),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              _BarLegend(color: Colors.blue.shade300,
-                  label: '탄 ${total > 0 ? (carbs / total * 100).toStringAsFixed(0) : 0}%'),
-              const SizedBox(width: 12),
-              _BarLegend(color: Colors.green.shade400,
-                  label: '단 ${total > 0 ? (protein / total * 100).toStringAsFixed(0) : 0}%'),
-              const SizedBox(width: 12),
-              _BarLegend(color: Colors.orange.shade300,
-                  label: '지 ${total > 0 ? (fat / total * 100).toStringAsFixed(0) : 0}%'),
-            ],
-          ),
-        ],
-      );
-    });
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                _BarLegend(
+                  color: Colors.blue.shade300,
+                  label:
+                      '탄 ${total > 0 ? (carbs / total * 100).toStringAsFixed(0) : 0}%',
+                ),
+                const SizedBox(width: 12),
+                _BarLegend(
+                  color: Colors.green.shade400,
+                  label:
+                      '단 ${total > 0 ? (protein / total * 100).toStringAsFixed(0) : 0}%',
+                ),
+                const SizedBox(width: 12),
+                _BarLegend(
+                  color: Colors.orange.shade300,
+                  label:
+                      '지 ${total > 0 ? (fat / total * 100).toStringAsFixed(0) : 0}%',
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -1089,7 +1366,11 @@ class _BarLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
       const SizedBox(width: 4),
       Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
     ],
@@ -1099,15 +1380,33 @@ class _BarLegend extends StatelessWidget {
 class _MacroItem extends StatelessWidget {
   final String label, value;
   final Color color;
-  const _MacroItem({required this.label, required this.value, required this.color});
+  const _MacroItem({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: const TextStyle(color: Colors.white30, fontSize: 10, letterSpacing: 0.5)),
+      Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white30,
+          fontSize: 10,
+          letterSpacing: 0.5,
+        ),
+      ),
       const SizedBox(height: 4),
-      Text(value, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600)),
+      Text(
+        value,
+        style: TextStyle(
+          color: color,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     ],
   );
 }
@@ -1115,7 +1414,11 @@ class _MacroItem extends StatelessWidget {
 class _NutriBadge extends StatelessWidget {
   final String label, value;
   final Color color;
-  const _NutriBadge({required this.label, required this.value, required this.color});
+  const _NutriBadge({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) => ConstrainedBox(
@@ -1124,9 +1427,22 @@ class _NutriBadge extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 14, height: 14,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
-          child: Center(child: Text(label, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w700))),
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 8,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
         ),
         const SizedBox(width: 3),
         Flexible(

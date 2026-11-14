@@ -43,6 +43,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final privacyUrl = Api().privacyUrl;
+    final termsUrl = Api().termsUrl;
+    final hasPrivacyUrl = _isWebUrl(privacyUrl);
+    final hasTermsUrl = _isWebUrl(termsUrl);
+
     return SafeArea(
       top: false,
       child: Scaffold(
@@ -51,7 +56,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
@@ -70,7 +79,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // 앱 정보 카드
               Container(
                 width: double.infinity,
@@ -78,7 +86,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF111111),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -89,7 +99,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Colors.deepOrange,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(Icons.restaurant, color: Colors.white, size: 24),
+                      child: const Icon(
+                        Icons.restaurant,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Column(
@@ -201,33 +215,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _ActionItem(
                     icon: Icons.description_outlined,
                     title: '개인정보 처리방침',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WebViewScreen(
-                            url: Api().privacyUrl,
-                            title: '개인정보 처리방침',
-                          ),
-                        ),
-                      );
-                    },
+                    subtitle: hasPrivacyUrl ? null : '링크를 준비 중이에요',
+                    onTap: hasPrivacyUrl
+                        ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => WebViewScreen(
+                                  url: privacyUrl,
+                                  title: '개인정보 처리방침',
+                                ),
+                              ),
+                            );
+                          }
+                        : null,
                   ),
                   _Divider(),
                   _ActionItem(
                     icon: Icons.policy_outlined,
                     title: '이용약관',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WebViewScreen(
-                            url: Api().termsUrl,
-                            title: '이용약관',
-                          ),
-                        ),
-                      );
-                    },
+                    subtitle: hasTermsUrl ? null : '링크를 준비 중이에요',
+                    onTap: hasTermsUrl
+                        ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    WebViewScreen(url: termsUrl, title: '이용약관'),
+                              ),
+                            );
+                          }
+                        : null,
                   ),
                   _Divider(),
                   _ActionItem(
@@ -256,9 +274,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
 
     if (rows.isEmpty) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('내보낼 기록이 없어요')),
-      );
+      messenger.showSnackBar(const SnackBar(content: Text('내보낼 기록이 없어요')));
       return;
     }
 
@@ -266,10 +282,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final csv = ExportService.buildHistoryCsv(rows);
       final fileName = ExportService.defaultFileName(DateTime.now());
       final file = await ExportService.writeCsvToTemp(csv, fileName);
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'text/csv')],
-        subject: 'BiteLens 분석 기록',
-      );
+      await Share.shareXFiles([
+        XFile(file.path, mimeType: 'text/csv'),
+      ], subject: 'BiteLens 분석 기록');
     } catch (e) {
       debugPrint('CSV 내보내기 오류: $e');
       if (!mounted) return;
@@ -310,6 +325,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  bool _isWebUrl(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        (uri.scheme == 'https' || uri.scheme == 'http') &&
+        uri.host.isNotEmpty;
   }
 }
 
@@ -381,11 +403,15 @@ class _ToggleItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle,
-                    style: const TextStyle(color: Colors.white24, fontSize: 12)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.white24, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -428,14 +454,20 @@ class _SelectItem extends StatelessWidget {
           Icon(icon, color: Colors.white38, size: 20),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(title,
-                style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            child: Text(
+              title,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
           ),
           DropdownButton<String>(
             value: value,
             dropdownColor: const Color(0xFF1A1A1A),
             underline: const SizedBox(),
-            icon: const Icon(Icons.chevron_right, color: Colors.white24, size: 18),
+            icon: const Icon(
+              Icons.chevron_right,
+              color: Colors.white24,
+              size: 18,
+            ),
             style: const TextStyle(color: Colors.white54, fontSize: 13),
             items: options
                 .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -455,7 +487,7 @@ class _ActionItem extends StatelessWidget {
   final String? subtitle;
   final Color titleColor;
   final Color iconColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _ActionItem({
     required this.icon,
@@ -463,28 +495,40 @@ class _ActionItem extends StatelessWidget {
     this.subtitle,
     this.titleColor = Colors.white70,
     this.iconColor = Colors.white38,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return GestureDetector(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 20),
+            Icon(icon, color: enabled ? iconColor : Colors.white12, size: 20),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(color: titleColor, fontSize: 14)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: enabled ? titleColor : Colors.white24,
+                      fontSize: 14,
+                    ),
+                  ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 3),
-                    Text(subtitle!,
-                        style: const TextStyle(color: Colors.white30, fontSize: 12)),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        color: Colors.white30,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ],
               ),
