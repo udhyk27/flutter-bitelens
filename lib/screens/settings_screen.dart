@@ -202,6 +202,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     iconColor: Colors.red.shade300,
                     onTap: () => _showClearHistoryDialog(),
                   ),
+                  _Divider(),
+                  _ActionItem(
+                    icon: Icons.delete_forever_outlined,
+                    title: '앱 데이터 전체 삭제',
+                    subtitle: '프로필, 체중 기록, 분석 기록, 설정을 모두 삭제',
+                    titleColor: Colors.red.shade300,
+                    iconColor: Colors.red.shade300,
+                    onTap: () => _showClearAllDataDialog(),
+                  ),
                 ],
               ),
 
@@ -325,6 +334,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _showClearAllDataDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '앱 데이터 전체 삭제',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        content: const Text(
+          '분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.',
+          style: TextStyle(color: Colors.white54, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소', style: TextStyle(color: Colors.white38)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(this.context);
+              await _clearAllUserData();
+              if (!mounted) return;
+              navigator.pop();
+              messenger.showSnackBar(
+                const SnackBar(content: Text('모든 앱 데이터를 삭제했어요.')),
+              );
+            },
+            child: Text('모두 삭제', style: TextStyle(color: Colors.red.shade300)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _clearAllUserData() async {
+    await DatabaseHelper.instance.clearAllUserData();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    if (!mounted) return;
+    setState(() {
+      _saveHistory = true;
+      _detailedAnalysis = false;
+      _selectedLanguage = '한국어';
+    });
   }
 
   bool _isWebUrl(String value) {

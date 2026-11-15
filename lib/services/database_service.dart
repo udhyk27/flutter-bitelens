@@ -61,16 +61,16 @@ class DatabaseHelper {
           );
         }
         if (oldVersion < 4) {
-          await db.execute(
-            'ALTER TABLE analysis_history ADD COLUMN meal TEXT',
-          );
+          await db.execute('ALTER TABLE analysis_history ADD COLUMN meal TEXT');
         }
         if (oldVersion < 5) {
           // food_name/calories 컬럼은 있었으나 채워지지 않았음 → 검색이 전체
           // JSON을 대상으로 동작했다. 기존 행의 result에서 값을 추출해 백필하고,
           // 이후 검색은 food_name 컬럼을 사용한다.
-          final rows =
-              await db.query('analysis_history', columns: ['id', 'result']);
+          final rows = await db.query(
+            'analysis_history',
+            columns: ['id', 'result'],
+          );
           // 개별 update를 순차 실행하면 대량 기록에서 지연/ANR이 발생하므로
           // batch로 묶어 한 번에 커밋한다(onUpgrade는 이미 트랜잭션 내부).
           final batch = db.batch();
@@ -129,7 +129,10 @@ class DatabaseHelper {
       if (!await src.exists()) return srcPath;
       final dir = await _imageDir();
       final ext = extension(srcPath).isNotEmpty ? extension(srcPath) : '.jpg';
-      final dest = join(dir.path, '${DateTime.now().microsecondsSinceEpoch}$ext');
+      final dest = join(
+        dir.path,
+        '${DateTime.now().microsecondsSinceEpoch}$ext',
+      );
       await src.copy(dest);
       return dest;
     } catch (_) {
@@ -199,7 +202,9 @@ class DatabaseHelper {
 
   /// 하루 통계에 필요한 기록만 읽는다. 전체 기록을 메모리에 올리지 않도록
   /// 저장된 로컬 ISO 날짜 문자열의 [start, next day) 범위로 제한한다.
-  Future<List<Map<String, dynamic>>> getAnalysisHistoryForDay(DateTime day) async {
+  Future<List<Map<String, dynamic>>> getAnalysisHistoryForDay(
+    DateTime day,
+  ) async {
     final db = await database;
     final start = DateTime(day.year, day.month, day.day);
     final end = start.add(const Duration(days: 1));
@@ -316,8 +321,11 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getWeeklyHistory() async {
     final db = await database;
     final start = DateTime.now().subtract(const Duration(days: 6));
-    final startStr =
-        DateTime(start.year, start.month, start.day).toIso8601String();
+    final startStr = DateTime(
+      start.year,
+      start.month,
+      start.day,
+    ).toIso8601String();
     return await db.query(
       'analysis_history',
       where: 'created_at >= ?',
@@ -347,6 +355,13 @@ class DatabaseHelper {
       await _deleteImageFile(r['image_path'] as String?);
     }
     await db.delete('analysis_history');
+  }
+
+  /// 분석 기록(영구 보관한 이미지 포함)과 체중 로그를 함께 삭제한다.
+  /// SharedPreferences에 저장된 프로필/설정은 호출자가 별도로 초기화한다.
+  Future<void> clearAllUserData() async {
+    await clearAll();
+    await clearWeightLog();
   }
 
   // ─── weight_log ──────────────────────────────────────────
