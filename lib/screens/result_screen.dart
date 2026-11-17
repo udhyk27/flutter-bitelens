@@ -48,6 +48,7 @@ class _ResultScreenState extends State<ResultScreen>
   bool _saveHistory = true;
   String _meal = mealForDate(DateTime.now()); // 끼니 태그
   bool _isLoading = true;
+  bool _isError = false;
   double? _tdee;
 
   late AnimationController _scanController;
@@ -94,12 +95,7 @@ class _ResultScreenState extends State<ResultScreen>
     final connectivity = await Connectivity().checkConnectivity();
     if (!mounted) return;
     if (connectivity.contains(ConnectivityResult.none)) {
-      setState(() {
-        _result = '인터넷 연결을 확인해주세요.';
-        _isLoading = false;
-      });
-      _scanController.stop();
-      _fadeController.forward();
+      _setError('인터넷 연결을 확인해주세요.');
       return;
     }
 
@@ -145,6 +141,7 @@ class _ResultScreenState extends State<ResultScreen>
         _baseAnalysis = analysis;
         _analysis = analysis;
         _isLoading = false;
+        _isError = false;
       });
 
       _scanController.stop();
@@ -173,9 +170,31 @@ class _ResultScreenState extends State<ResultScreen>
 
   void _setError(String msg) {
     if (!mounted) return;
-    setState(() { _result = msg; _isLoading = false; });
+    setState(() {
+      _result = msg;
+      _isLoading = false;
+      _isError = true;
+    });
     _scanController.stop();
     _fadeController.forward();
+  }
+
+  /// 같은 사진으로 분석을 다시 시도한다. 실패한 요청은 기록으로 저장되지 않으므로
+  /// 상태만 초기화하면 새 분석 요청을 안전하게 시작할 수 있다.
+  void _retryAnalysis() {
+    if (_isLoading) return;
+    setState(() {
+      _result = '';
+      _analysis = null;
+      _baseAnalysis = null;
+      _isLoading = true;
+      _isError = false;
+    });
+    _fadeController.reset();
+    _scanController
+      ..reset()
+      ..repeat(reverse: true);
+    _analyzeFood();
   }
 
   /// 먹은 양(배수) 변경 → 표시값 재계산 및 저장된 기록 갱신
@@ -512,31 +531,37 @@ class _ResultScreenState extends State<ResultScreen>
                     ),
                     const SizedBox(height: 20),
 
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF141414),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+                    if (_isError)
+                      _AnalysisErrorCard(
+                        message: _result,
+                        onRetry: _retryAnalysis,
+                      )
+                    else
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF141414),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+                        ),
+                        child: Text(
+                          _analysis?.displayText ?? _result,
+                          style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.8, letterSpacing: 0.3),
+                        ),
                       ),
-                      child: Text(
-                        _analysis?.displayText ?? _result,
-                        style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.8, letterSpacing: 0.3),
-                      ),
-                    ),
 
-                    if (_analysis != null && _analysis!.hasNutrition) ...[
+                    if (!_isError && _analysis != null && _analysis!.hasNutrition) ...[
                       const SizedBox(height: 12),
                       _PortionSelector(selected: _portion, onChanged: _setPortion),
                     ],
 
-                    if (_analysis != null) ...[
+                    if (!_isError && _analysis != null) ...[
                       const SizedBox(height: 12),
                       _NutritionCard(analysis: _analysis!),
                     ],
 
-                    if (_tdee != null)
+                    if (!_isError && _tdee != null)
                       _TdeeBanner(tdee: _tdee!, parsedCalories: parsedCalories),
 
                     const SizedBox(height: 12),
@@ -583,9 +608,11 @@ class _ResultScreenState extends State<ResultScreen>
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Center(
-                        child: Text('다시 찍기',
-                            style: TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 1)),
+                        child: Center(
+                          child: Text(
+                            _isError ? '다른 사진 선택' : '다시 찍기',
+                            style: const TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 1),
+                          ),
                       ),
                     ),
                   ),
@@ -607,6 +634,60 @@ class _ResultScreenState extends State<ResultScreen>
     } catch (e) {
       debugPrint('공유 오류: $e');
     }
+  }
+}
+
+class _AnalysisErrorCard extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _AnalysisErrorCard({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF181312),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.deepOrange.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.deepOrange, size: 19),
+              SizedBox(width: 8),
+              Text(
+                '분석을 완료하지 못했어요',
+                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.white54, fontSize: 13, height: 1.55),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            height: 44,
+            child: OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('다시 분석'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(color: Colors.deepOrange.withValues(alpha: 0.7)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
