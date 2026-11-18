@@ -6,11 +6,13 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants/svg_constant.dart';
+import 'l10n/app_locale.dart';
 
 late List<CameraDescription> _cameras;
 
@@ -43,6 +45,13 @@ Future<void> main() async {
     debugPrint('카메라 목록 조회 실패: $e');
   }
 
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    appLocale.value = localeForLanguage(prefs.getString('app_language'));
+  } catch (e) {
+    debugPrint('앱 언어 설정 조회 실패: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -51,18 +60,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BiteLens',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle.light,
+    return ValueListenableBuilder<Locale>(
+      valueListenable: appLocale,
+      builder: (context, locale, _) => MaterialApp(
+        title: 'BiteLens',
+        locale: locale,
+        supportedLocales: const [Locale('ko'), Locale('en'), Locale('ja')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.dark().copyWith(
+          scaffoldBackgroundColor: Colors.black,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            systemOverlayStyle: SystemUiOverlayStyle.light,
+          ),
         ),
+        home: const AnimatedSplash(),
       ),
-      home: const AnimatedSplash(),
     );
   }
 }

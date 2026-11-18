@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
 import '../services/export_service.dart';
+import '../l10n/app_locale.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,6 +19,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _saveHistory = true; // 분석 기록 저장
   bool _detailedAnalysis = false; // 상세 분석
   String _selectedLanguage = '한국어';
+  String _appLanguage = 'ko';
+
+  String get _appLanguageName => switch (_appLanguage) {
+        'en' => 'English',
+        'ja' => '日本語',
+        _ => '한국어',
+      };
 
   @override
   void initState() {
@@ -28,10 +36,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // 불러오기
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _saveHistory = prefs.getBool('save_history') ?? true;
       _detailedAnalysis = prefs.getBool('detailed_analysis') ?? false;
       _selectedLanguage = prefs.getString('response_language') ?? '한국어';
+      _appLanguage = prefs.getString('app_language') ?? 'ko';
     });
   }
 
@@ -120,7 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Version ${Api().appVersion}',
+                          '${context.tr('Version')} ${Api().appVersion}',
                           style: TextStyle(color: Colors.white30, fontSize: 12),
                         ),
                       ],
@@ -132,14 +142,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 28),
 
               // 분석 설정
-              _SectionHeader(title: '분석 설정'),
+              _SectionHeader(title: context.tr('분석 설정')),
               const SizedBox(height: 12),
               _SettingsCard(
                 children: [
                   _ToggleItem(
                     icon: Icons.history_outlined,
-                    title: '분석 기록 저장',
-                    subtitle: '분석 결과를 기기에 저장합니다',
+                    title: context.tr('분석 기록 저장'),
+                    subtitle: context.tr('분석 결과를 기기에 저장합니다'),
                     value: _saveHistory,
                     onChanged: (val) async {
                       setState(() => _saveHistory = val);
@@ -149,8 +159,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _Divider(),
                   _ToggleItem(
                     icon: Icons.hd_outlined,
-                    title: '상세분석',
-                    subtitle: '응답이 느려질 수 있습니다',
+                    title: context.tr('상세분석'),
+                    subtitle: context.tr('응답이 느려질 수 있습니다'),
                     value: _detailedAnalysis,
                     onChanged: (val) async {
                       setState(() => _detailedAnalysis = val);
@@ -163,13 +173,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 24),
 
               // 언어 설정
-              _SectionHeader(title: '언어'),
+              _SectionHeader(title: context.tr('언어')),
               const SizedBox(height: 12),
               _SettingsCard(
                 children: [
                   _SelectItem(
                     icon: Icons.language_outlined,
-                    title: '응답 언어',
+                    title: context.tr('앱 언어'),
+                    value: _appLanguageName,
+                    options: const ['한국어', 'English', '日本語'],
+                    onChanged: (val) async {
+                      final code = languageCodeForName(val);
+                      setState(() => _appLanguage = code);
+                      appLocale.value = localeForLanguage(code);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setString('app_language', code);
+                    },
+                  ),
+                  _Divider(),
+                  _SelectItem(
+                    icon: Icons.translate,
+                    title: context.tr('응답 언어'),
                     value: _selectedLanguage,
                     options: ['한국어', 'English', '日本語'],
                     onChanged: (val) async {
@@ -184,20 +208,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 24),
 
               // 데이터
-              _SectionHeader(title: '데이터'),
+              _SectionHeader(title: context.tr('데이터')),
               const SizedBox(height: 12),
               _SettingsCard(
                 children: [
                   _ActionItem(
                     icon: Icons.file_download_outlined,
-                    title: '데이터 내보내기 (CSV)',
-                    subtitle: '분석 기록을 CSV 파일로 공유',
+                    title: context.tr('데이터 내보내기 (CSV)'),
+                    subtitle: context.tr('분석 기록을 CSV 파일로 공유'),
                     onTap: _exportCsv,
                   ),
                   _Divider(),
                   _ActionItem(
                     icon: Icons.delete_sweep_outlined,
-                    title: '분석 기록 전체 삭제',
+                    title: context.tr('분석 기록 전체 삭제'),
                     titleColor: Colors.red.shade300,
                     iconColor: Colors.red.shade300,
                     onTap: () => _showClearHistoryDialog(),
@@ -205,8 +229,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _Divider(),
                   _ActionItem(
                     icon: Icons.delete_forever_outlined,
-                    title: '앱 데이터 전체 삭제',
-                    subtitle: '프로필, 체중 기록, 분석 기록, 설정을 모두 삭제',
+                    title: context.tr('앱 데이터 전체 삭제'),
+                    subtitle: context.tr('프로필, 체중 기록, 분석 기록, 설정을 모두 삭제'),
                     titleColor: Colors.red.shade300,
                     iconColor: Colors.red.shade300,
                     onTap: () => _showClearAllDataDialog(),
@@ -217,14 +241,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 24),
 
               // 앱 정보
-              _SectionHeader(title: '앱 정보'),
+              _SectionHeader(title: context.tr('앱 정보')),
               const SizedBox(height: 12),
               _SettingsCard(
                 children: [
                   _ActionItem(
                     icon: Icons.description_outlined,
-                    title: '개인정보 처리방침',
-                    subtitle: hasPrivacyUrl ? null : '링크를 준비 중이에요',
+                    title: context.tr('개인정보 처리방침'),
+                    subtitle: hasPrivacyUrl ? null : context.tr('링크를 준비 중이에요'),
                     onTap: hasPrivacyUrl
                         ? () {
                             Navigator.push(
@@ -232,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               MaterialPageRoute(
                                 builder: (_) => WebViewScreen(
                                   url: privacyUrl,
-                                  title: '개인정보 처리방침',
+                                  title: context.tr('개인정보 처리방침'),
                                 ),
                               ),
                             );
@@ -242,15 +266,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _Divider(),
                   _ActionItem(
                     icon: Icons.policy_outlined,
-                    title: '이용약관',
-                    subtitle: hasTermsUrl ? null : '링크를 준비 중이에요',
+                    title: context.tr('이용약관'),
+                    subtitle: hasTermsUrl ? null : context.tr('링크를 준비 중이에요'),
                     onTap: hasTermsUrl
                         ? () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    WebViewScreen(url: termsUrl, title: '이용약관'),
+                                    WebViewScreen(url: termsUrl, title: context.tr('이용약관')),
                               ),
                             );
                           }
@@ -259,7 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _Divider(),
                   _ActionItem(
                     icon: Icons.info_outline,
-                    title: '오픈소스 라이선스',
+                    title: context.tr('오픈소스 라이선스'),
                     onTap: () {
                       showLicensePage(
                         context: context,
@@ -283,7 +307,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
 
     if (rows.isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('내보낼 기록이 없어요')));
+      messenger.showSnackBar(SnackBar(content: Text(context.tr('내보낼 기록이 없어요'))));
       return;
     }
 
@@ -293,12 +317,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final file = await ExportService.writeCsvToTemp(csv, fileName);
       await Share.shareXFiles([
         XFile(file.path, mimeType: 'text/csv'),
-      ], subject: 'BiteLens 분석 기록');
+      ], subject: context.tr('BiteLens 분석 기록'));
     } catch (e) {
       debugPrint('CSV 내보내기 오류: $e');
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('내보내기 중 오류가 발생했습니다.')),
+        SnackBar(content: Text(context.tr('내보내기 중 오류가 발생했습니다.'))),
       );
     }
   }
@@ -309,18 +333,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          '기록 전체 삭제',
+        title: Text(
+          context.tr('기록 전체 삭제'),
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
-        content: const Text(
-          '모든 분석 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없어요.',
+        content: Text(
+          context.tr('모든 분석 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없어요.'),
           style: TextStyle(color: Colors.white54, fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소', style: TextStyle(color: Colors.white38)),
+            child: Text(context.tr('취소'), style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () async {
@@ -329,7 +353,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await DatabaseHelper.instance.clearAll();
               navigator.pop();
             },
-            child: Text('삭제', style: TextStyle(color: Colors.red.shade300)),
+            child: Text(context.tr('삭제'), style: TextStyle(color: Colors.red.shade300)),
           ),
         ],
       ),
@@ -342,18 +366,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          '앱 데이터 전체 삭제',
+        title: Text(
+          context.tr('앱 데이터 전체 삭제'),
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
-        content: const Text(
-          '분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.',
+        content: Text(
+          context.tr('분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.'),
           style: TextStyle(color: Colors.white54, fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소', style: TextStyle(color: Colors.white38)),
+            child: Text(context.tr('취소'), style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () async {
@@ -363,10 +387,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (!mounted) return;
               navigator.pop();
               messenger.showSnackBar(
-                const SnackBar(content: Text('모든 앱 데이터를 삭제했어요.')),
+                SnackBar(content: Text(context.tr('모든 앱 데이터를 삭제했어요.'))),
               );
             },
-            child: Text('모두 삭제', style: TextStyle(color: Colors.red.shade300)),
+            child: Text(context.tr('모두 삭제'), style: TextStyle(color: Colors.red.shade300)),
           ),
         ],
       ),
@@ -382,7 +406,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _saveHistory = true;
       _detailedAnalysis = false;
       _selectedLanguage = '한국어';
+      _appLanguage = 'ko';
     });
+    appLocale.value = const Locale('ko');
   }
 
   bool _isWebUrl(String value) {
