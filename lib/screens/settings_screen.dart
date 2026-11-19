@@ -303,6 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportCsv() async {
     final messenger = ScaffoldMessenger.of(context);
+    final exportSubject = context.tr('BiteLens 분석 기록');
     final rows = await DatabaseHelper.instance.getAnalysisHistory();
     if (!mounted) return;
 
@@ -317,7 +318,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final file = await ExportService.writeCsvToTemp(csv, fileName);
       await Share.shareXFiles([
         XFile(file.path, mimeType: 'text/csv'),
-      ], subject: context.tr('BiteLens 분석 기록'));
+      ], subject: exportSubject);
     } catch (e) {
       debugPrint('CSV 내보내기 오류: $e');
       if (!mounted) return;
@@ -361,6 +362,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showClearAllDataDialog() {
+    final clearedMessage = context.tr('모든 앱 데이터를 삭제했어요.');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -387,7 +389,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (!mounted) return;
               navigator.pop();
               messenger.showSnackBar(
-                SnackBar(content: Text(context.tr('모든 앱 데이터를 삭제했어요.'))),
+                SnackBar(content: Text(clearedMessage)),
               );
             },
             child: Text(context.tr('모두 삭제'), style: TextStyle(color: Colors.red.shade300)),

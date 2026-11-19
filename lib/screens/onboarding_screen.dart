@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:bitelens/l10n/app_locale.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'home_screen.dart';
@@ -127,7 +128,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     controller: _pageController,
                     onPageChanged: (i) => setState(() => _currentPage = i),
                     itemCount: _pages.length,
-                    itemBuilder: (_, i) => _OnboardingPage(data: _pages[i]),
+                    itemBuilder: (context, i) => _OnboardingPage(data: _pages[i]),
                   ),
                 ),
                 _PageDots(
@@ -137,7 +138,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 ),
                 const SizedBox(height: 28),
                 _PrimaryButton(
-                  label: _isLastPage ? '내 정보 입력하고 시작' : '다음',
+                  label: context.tr(_isLastPage ? '내 정보 입력하고 시작' : '다음'),
                   icon: _isLastPage
                       ? Icons.person_add_alt_1_outlined
                       : Icons.arrow_forward_rounded,
@@ -146,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 ),
                 const SizedBox(height: 12),
                 _TextButton(
-                  label: _isLastPage ? '나중에 설정할게요' : '바로 시작',
+                  label: context.tr(_isLastPage ? '나중에 설정할게요' : '바로 시작'),
                   onTap: () => _completeOnboarding(),
                 ),
               ],
@@ -209,10 +210,10 @@ class _OnboardingTopBar extends StatelessWidget {
         GestureDetector(
           onTap: onSkip,
           behavior: HitTestBehavior.opaque,
-          child: const Padding(
+          child: Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              '건너뛰기',
+              context.tr('건너뛰기'),
               style: TextStyle(color: Colors.white38, fontSize: 13),
             ),
           ),
@@ -244,7 +245,7 @@ class _OnboardingPage extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          data.title,
+          context.tr(data.title),
           style: const TextStyle(
             color: Colors.white54,
             fontSize: 22,
@@ -255,7 +256,7 @@ class _OnboardingPage extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          data.highlight,
+          context.tr(data.highlight),
           style: const TextStyle(
             color: Colors.white,
             fontSize: 31,
@@ -268,7 +269,7 @@ class _OnboardingPage extends StatelessWidget {
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 300),
           child: Text(
-            data.description,
+            context.tr(data.description),
             style: const TextStyle(
               color: Colors.white38,
               fontSize: 15,

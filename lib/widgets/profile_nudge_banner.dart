@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_locale.dart';
 
 /// 프로필 설정을 안내하는 공통 배너.
 class ProfileNudgeBanner extends StatelessWidget {
@@ -23,7 +24,7 @@ class ProfileNudgeBanner extends StatelessWidget {
             const SizedBox(width: 10),
             const Expanded(
               child: Text(
-                '프로필을 설정하면 칼로리 기준이 맞춤 설정돼요',
+                context.tr('프로필을 설정하면 칼로리 기준이 맞춤 설정돼요'),
                 style: TextStyle(color: Colors.deepOrange, fontSize: 12, height: 1.4),
               ),
             ),

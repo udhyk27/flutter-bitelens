@@ -14,6 +14,7 @@ import '../models/food_analysis.dart';
 import '../services/api_service.dart';
 import '../services/database_service.dart';
 import '../widgets/analysis_edit_sheet.dart';
+import '../l10n/app_locale.dart';
 
 /// 분석 실패 사유를 사용자에게 그대로 전달하기 위한 예외.
 /// 상태코드별 메시지가 일반 catch(e)에서 "분석 중 오류"로 뭉개지지 않도록
@@ -171,7 +172,7 @@ class _ResultScreenState extends State<ResultScreen>
   void _setError(String msg) {
     if (!mounted) return;
     setState(() {
-      _result = msg;
+      _result = context.tr(msg);
       _isLoading = false;
       _isError = true;
     });
@@ -474,7 +475,7 @@ class _ResultScreenState extends State<ResultScreen>
                             child: CircularProgressIndicator(color: Colors.orange, strokeWidth: 1.5),
                           ),
                           const SizedBox(width: 10),
-                          const Text('AI 분석 중...',
+                          Text(context.tr('AI 분석 중...'),
                               style: TextStyle(color: Colors.white70, fontSize: 13, letterSpacing: 1.5)),
                         ],
                       ),
@@ -504,7 +505,7 @@ class _ResultScreenState extends State<ResultScreen>
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Text('분석 결과',
+                        Text(context.tr('분석 결과'),
                             style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1)),
                         const Spacer(),
                         if (_analysis != null && _analysis!.hasNutrition)
@@ -519,7 +520,7 @@ class _ResultScreenState extends State<ResultScreen>
                               ),
                               child: Row(
                                 children: [
-                                  Text(_meal,
+                                  Text(context.tr(_meal),
                                       style: TextStyle(color: mealColorFor(_meal), fontSize: 11, fontWeight: FontWeight.w600)),
                                   const SizedBox(width: 4),
                                   Icon(Icons.edit, color: mealColorFor(_meal), size: 11),
@@ -581,7 +582,7 @@ class _ResultScreenState extends State<ResultScreen>
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.',
+                              context.tr('AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.'),
                               style: TextStyle(color: Colors.white24, fontSize: 11, height: 1.6),
                             ),
                           ),
@@ -610,7 +611,7 @@ class _ResultScreenState extends State<ResultScreen>
                       ),
                         child: Center(
                           child: Text(
-                            _isError ? '다른 사진 선택' : '다시 찍기',
+                            context.tr(_isError ? '다른 사진 선택' : '다시 찍기'),
                             style: const TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 1),
                           ),
                       ),
@@ -629,7 +630,7 @@ class _ResultScreenState extends State<ResultScreen>
       await Share.shareXFiles(
         [XFile(widget.imagePath)],
         text: _analysis?.displayText ?? _result,
-        subject: 'BiteLens 음식 분석 결과',
+        subject: context.tr('BiteLens 음식 분석 결과'),
       );
     } catch (e) {
       debugPrint('공유 오류: $e');
@@ -656,12 +657,12 @@ class _AnalysisErrorCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.error_outline, color: Colors.deepOrange, size: 19),
               SizedBox(width: 8),
               Text(
-                '분석을 완료하지 못했어요',
+                context.tr('분석을 완료하지 못했어요'),
                 style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ],
@@ -677,7 +678,7 @@ class _AnalysisErrorCard extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('다시 분석'),
+              label: Text(context.tr('다시 분석')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
                 side: BorderSide(color: Colors.deepOrange.withValues(alpha: 0.7)),
@@ -708,19 +709,19 @@ class _TdeeBanner extends StatelessWidget {
     String comment;
     if (ratio == null) {
       barColor = Colors.white24;
-      comment = '칼로리 정보를 파싱할 수 없었어요';
+      comment = context.tr('칼로리 정보를 파싱할 수 없었어요');
     } else if (ratio < 0.2) {
       barColor = Colors.green.shade400;
-      comment = '가벼운 식사예요 👍';
+      comment = context.tr('가벼운 식사예요 👍');
     } else if (ratio < 0.4) {
       barColor = Colors.green.shade300;
-      comment = '적당한 한 끼네요';
+      comment = context.tr('적당한 한 끼네요');
     } else if (ratio < 0.6) {
       barColor = Colors.orange.shade300;
-      comment = '하루 권장량의 절반 이상이에요';
+      comment = context.tr('하루 권장량의 절반 이상이에요');
     } else {
       barColor = Colors.red.shade300;
-      comment = '칼로리가 꽤 높은 편이에요';
+      comment = context.tr('칼로리가 꽤 높은 편이에요');
     }
 
     return Container(
@@ -738,7 +739,7 @@ class _TdeeBanner extends StatelessWidget {
             children: [
               const Icon(Icons.local_fire_department_outlined, color: Colors.deepOrange, size: 16),
               const SizedBox(width: 8),
-              const Text('일일 권장칼로리 기준',
+              Text(context.tr('일일 권장칼로리 기준'),
                   style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 0.5)),
               const Spacer(),
               Text('${tdee.toStringAsFixed(0)} kcal',
@@ -908,11 +909,11 @@ class _PortionSelector extends StatelessWidget {
             children: [
               const Icon(Icons.restaurant_outlined, color: Colors.deepOrange, size: 15),
               const SizedBox(width: 8),
-              const Text('먹은 양',
+              Text(context.tr('먹은 양'),
                   style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 0.5)),
               const Spacer(),
               Text(
-                selected == 1.0 ? '1인분 기준' : '${_num(selected)}인분',
+                selected == 1.0 ? context.tr('1인분 기준') : '${_num(selected)} ${context.tr('인분')}',
                 style: const TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ],
@@ -987,7 +988,7 @@ class _NutritionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('영양소', style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
+          Text(context.tr('영양소'), style: const TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
           const SizedBox(height: 14),
 
           if (total > 0) ...[
@@ -1007,19 +1008,19 @@ class _NutritionCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Row(children: [
-              _Legend(color: Colors.blue.shade300, label: '탄 ${(carbs/total*100).toStringAsFixed(0)}%'),
+              _Legend(color: Colors.blue.shade300, label: '${context.tr('탄')} ${(carbs/total*100).toStringAsFixed(0)}%'),
               const SizedBox(width: 12),
-              _Legend(color: Colors.green.shade400, label: '단 ${(protein/total*100).toStringAsFixed(0)}%'),
+              _Legend(color: Colors.green.shade400, label: '${context.tr('단')} ${(protein/total*100).toStringAsFixed(0)}%'),
               const SizedBox(width: 12),
-              _Legend(color: Colors.orange.shade300, label: '지 ${(fat/total*100).toStringAsFixed(0)}%'),
+              _Legend(color: Colors.orange.shade300, label: '${context.tr('지')} ${(fat/total*100).toStringAsFixed(0)}%'),
             ]),
             const SizedBox(height: 14),
           ],
 
           Row(children: [
-            Expanded(child: _MacroCol(label: '탄수화물', value: carbsStr, color: Colors.blue.shade300)),
-            Expanded(child: _MacroCol(label: '단백질', value: proteinStr, color: Colors.green.shade400)),
-            Expanded(child: _MacroCol(label: '지방', value: fatStr, color: Colors.orange.shade300)),
+            Expanded(child: _MacroCol(label: context.tr('탄수화물'), value: carbsStr, color: Colors.blue.shade300)),
+            Expanded(child: _MacroCol(label: context.tr('단백질'), value: proteinStr, color: Colors.green.shade400)),
+            Expanded(child: _MacroCol(label: context.tr('지방'), value: fatStr, color: Colors.orange.shade300)),
           ]),
 
           if (sodiumStr != null || fiberStr != null) ...[
@@ -1028,9 +1029,9 @@ class _NutritionCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(children: [
               if (sodiumStr != null)
-                Expanded(child: _MacroCol(label: '나트륨', value: sodiumStr, color: Colors.yellow.shade600)),
+                Expanded(child: _MacroCol(label: context.tr('나트륨'), value: sodiumStr, color: Colors.yellow.shade600)),
               if (fiberStr != null)
-                Expanded(child: _MacroCol(label: '식이섬유', value: fiberStr, color: Colors.teal.shade300)),
+                Expanded(child: _MacroCol(label: context.tr('식이섬유'), value: fiberStr, color: Colors.teal.shade300)),
             ]),
           ],
         ],

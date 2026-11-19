@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bitelens/l10n/app_locale.dart';
 import '../services/database_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -224,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '입력한 정보를 기반으로 칼로리 분석 기준이 설정됩니다',
+                        context.tr('입력한 정보를 기반으로 칼로리 분석 기준이 설정됩니다'),
                         style: TextStyle(color: Colors.deepOrange, fontSize: 12, height: 1.4),
                       ),
                     ),
@@ -235,7 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 28),
 
               // ─── 신체 정보 ────────────────────────────────
-              _SectionHeader(title: '신체 정보'),
+              _SectionHeader(title: context.tr('신체 정보')),
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
@@ -250,7 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         const Icon(Icons.person_outline, color: Colors.white38, size: 20),
                         const SizedBox(width: 14),
-                        const Text('성별', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                        Text(context.tr('성별'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
                         const Spacer(),
                         _GenderToggle(
                           value: _selectedGender,
@@ -267,17 +268,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Row(
                       children: [
                         Expanded(child: _BodyInputField(
-                          controller: _ageController, label: '나이', unit: '세',
+                          controller: _ageController, label: context.tr('나이'), unit: context.tr('세'),
                           onChanged: (_) async { _calculate(); await _saveBodyInfo(); },
                         )),
                         const SizedBox(width: 10),
                         Expanded(child: _BodyInputField(
-                          controller: _heightController, label: '키', unit: 'cm',
+                          controller: _heightController, label: context.tr('키'), unit: 'cm',
                           onChanged: (_) async { _calculate(); await _saveBodyInfo(); },
                         )),
                         const SizedBox(width: 10),
                         Expanded(child: _BodyInputField(
-                          controller: _weightController, label: '몸무게', unit: 'kg',
+                          controller: _weightController, label: context.tr('몸무게'), unit: 'kg',
                           onChanged: (_) async { _calculate(); await _saveBodyInfo(); },
                         )),
                       ],
@@ -289,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         const Icon(Icons.directions_run_outlined, color: Colors.white38, size: 20),
                         const SizedBox(width: 14),
-                        const Text('활동량', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                        Text(context.tr('활동량'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
                         const Spacer(),
                         DropdownButton<String>(
                           value: _selectedActivity,
@@ -298,7 +299,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           icon: const Icon(Icons.chevron_right, color: Colors.white24, size: 18),
                           style: const TextStyle(color: Colors.white54, fontSize: 12),
                           items: _activityOptions
-                              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                              .map((e) => DropdownMenuItem(value: e, child: Text(context.tr(e))))
                               .toList(),
                           onChanged: (val) async {
                             if (val != null) {
@@ -317,7 +318,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // ─── BMI / BMR 결과 ───────────────────────────
               if (_bmi != null && _bmr != null && _tdee != null) ...[
-                _SectionHeader(title: '분석 결과'),
+                _SectionHeader(title: context.tr('분석 결과')),
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
@@ -346,7 +347,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: _getBmiColor(_bmi!).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text(_getBmiLabel(_bmi!),
+                              child: Text(context.tr(_getBmiLabel(_bmi!)),
                                   style: TextStyle(color: _getBmiColor(_bmi!), fontSize: 13, fontWeight: FontWeight.w600)),
                             ),
                           ),
@@ -355,13 +356,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 16),
                       _BmiGaugeBar(bmi: _bmi!),
                       const SizedBox(height: 8),
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('저체중', style: TextStyle(color: Colors.white24, fontSize: 10)),
-                          Text('정상', style: TextStyle(color: Colors.white24, fontSize: 10)),
-                          Text('과체중', style: TextStyle(color: Colors.white24, fontSize: 10)),
-                          Text('비만', style: TextStyle(color: Colors.white24, fontSize: 10)),
+                          Text(context.tr('저체중'), style: const TextStyle(color: Colors.white24, fontSize: 10)),
+                          Text(context.tr('정상'), style: const TextStyle(color: Colors.white24, fontSize: 10)),
+                          Text(context.tr('과체중'), style: const TextStyle(color: Colors.white24, fontSize: 10)),
+                          Text(context.tr('비만'), style: const TextStyle(color: Colors.white24, fontSize: 10)),
                         ],
                       ),
                     ],
@@ -371,32 +372,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   children: [
                     Expanded(child: _MetricCard(
-                      label: '기초대사량', sublabel: 'BMR',
+                      label: context.tr('기초대사량'), sublabel: 'BMR',
                       value: _bmr!.toStringAsFixed(0), unit: 'kcal',
                       icon: Icons.favorite_border, color: Colors.white70,
-                      tooltip: '아무것도 하지 않아도\n심장 박동, 호흡, 체온 유지 등\n생명 활동에 소비되는 최소 칼로리예요.\n\n해리스-베네딕트 공식으로 계산되며\n성별·나이·키·몸무게를 기반으로 합니다.',
+                      tooltip: context.tr('아무것도 하지 않아도\n심장 박동, 호흡, 체온 유지 등\n생명 활동에 소비되는 최소 칼로리예요.\n\n해리스-베네딕트 공식으로 계산되며\n성별·나이·키·몸무게를 기반으로 합니다.'),
                     )),
                     const SizedBox(width: 10),
                     Expanded(child: _MetricCard(
-                      label: '일일 권장칼로리', sublabel: 'TDEE',
+                      label: context.tr('일일 권장칼로리'), sublabel: 'TDEE',
                       value: _tdee!.toStringAsFixed(0), unit: 'kcal',
                       icon: Icons.local_fire_department_outlined, color: Colors.deepOrange,
-                      tooltip: '하루 동안 실제로 소비하는\n총 칼로리예요.\n\nBMR × 활동량 계수로 산출되며\n이 수치가 음식 분석 시\n칼로리 기준선으로 사용됩니다.',
+                      tooltip: context.tr('하루 동안 실제로 소비하는\n총 칼로리예요.\n\nBMR × 활동량 계수로 산출되며\n이 수치가 음식 분석 시\n칼로리 기준선으로 사용됩니다.'),
                     )),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
-                    '* 해리스-베네딕트 공식 기반 추정치입니다. 개인차가 있을 수 있어요.',
+                    context.tr('* 해리스-베네딕트 공식 기반 추정치입니다. 개인차가 있을 수 있어요.'),
                     style: TextStyle(color: Colors.white24, fontSize: 11, height: 1.5),
                   ),
                 ),
                 const SizedBox(height: 24),
 
                 // ─── 매크로 목표 ──────────────────────────────
-                _SectionHeader(title: '매크로 목표'),
+                _SectionHeader(title: context.tr('매크로 목표')),
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
@@ -409,7 +410,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('목표 비율',
+                      Text(context.tr('목표 비율'),
                           style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
                       const SizedBox(height: 12),
                       Row(
@@ -430,7 +431,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                   child: Center(
-                                    child: Text(preset,
+                                    child: Text(context.tr(preset),
                                         style: TextStyle(
                                           color: sel ? Colors.white : Colors.white54,
                                           fontSize: 13,
@@ -447,16 +448,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Expanded(child: _MacroGoalCol(
-                            label: '탄수화물', grams: _carbGoal, color: Colors.blue.shade300)),
+                            label: context.tr('탄수화물'), grams: _carbGoal, color: Colors.blue.shade300)),
                           Expanded(child: _MacroGoalCol(
-                            label: '단백질', grams: _proteinGoal, color: Colors.green.shade400)),
+                            label: context.tr('단백질'), grams: _proteinGoal, color: Colors.green.shade400)),
                           Expanded(child: _MacroGoalCol(
-                            label: '지방', grams: _fatGoal, color: Colors.orange.shade300)),
+                            label: context.tr('지방'), grams: _fatGoal, color: Colors.orange.shade300)),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'TDEE와 선택한 비율로 계산된 하루 목표량이에요',
+                      Text(
+                        context.tr('TDEE와 선택한 비율로 계산된 하루 목표량이에요'),
                         style: TextStyle(color: Colors.white24, fontSize: 11, height: 1.5),
                       ),
                     ],
@@ -477,7 +478,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Icon(Icons.calculate_outlined, color: Colors.white12, size: 40),
                       SizedBox(height: 12),
                       Text(
-                        '신체 정보를 입력하면\nBMI와 기초대사량이 계산됩니다',
+                        context.tr('신체 정보를 입력하면\nBMI와 기초대사량이 계산됩니다'),
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.white24, fontSize: 13, height: 1.6),
                       ),
@@ -488,7 +489,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
 
               // ─── 몸무게 기록 ──────────────────────────────
-              _SectionHeader(title: '몸무게 기록'),
+              _SectionHeader(title: context.tr('몸무게 기록')),
               const SizedBox(height: 12),
 
               // 입력 행
@@ -508,9 +509,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         controller: _logWeightController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         style: const TextStyle(color: Colors.white, fontSize: 15),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: InputBorder.none,
-                          hintText: '오늘 몸무게 입력 (kg)',
+                          hintText: context.tr('오늘 몸무게 입력 (kg)'),
                           hintStyle: TextStyle(color: Colors.white24, fontSize: 14),
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
@@ -526,7 +527,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.deepOrange,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text('기록', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        child: Text(context.tr('기록'), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ],
@@ -642,11 +643,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
                       Icon(Icons.show_chart, color: Colors.white12, size: 32),
                       SizedBox(height: 10),
-                      Text('기록을 추가하면 추이 그래프가 표시됩니다',
+                      Text(context.tr('기록을 추가하면 추이 그래프가 표시됩니다'),
                           style: TextStyle(color: Colors.white24, fontSize: 12)),
                     ],
                   ),
@@ -669,8 +670,8 @@ class _WeightChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (logs.length < 2) {
-      return const Center(
-        child: Text('2개 이상 기록 시 그래프가 표시됩니다',
+      return Center(
+        child: Text(context.tr('2개 이상 기록 시 그래프가 표시됩니다'),
             style: TextStyle(color: Colors.white24, fontSize: 12)),
       );
     }
@@ -822,7 +823,7 @@ class _GenderToggle extends StatelessWidget {
                 color: selected ? Colors.deepOrange : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(g, style: TextStyle(
+              child: Text(context.tr(g), style: TextStyle(
                 color: selected ? Colors.white : Colors.white38,
                 fontSize: 13, fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
               )),
@@ -962,7 +963,7 @@ class _MetricCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('확인', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                    child: Text(context.tr('확인'), style: const TextStyle(color: Colors.white54, fontSize: 13)),
                   ),
                 ),
               ),

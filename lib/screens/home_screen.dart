@@ -6,6 +6,7 @@ import 'package:bitelens/screens/result_screen.dart';
 import 'package:bitelens/screens/settings_screen.dart';
 import 'package:bitelens/services/database_service.dart';
 import 'package:bitelens/widgets/profile_nudge_banner.dart';
+import 'package:bitelens/l10n/app_locale.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -248,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen>
                         fatGoal: _fatGoal,
                       ),
                     if (_todayCalories > 0 || _tdee != null) const SizedBox(height: 12),
-                    const Text('음식을 프레임에 맞춰주세요',
+                    Text(context.tr('음식을 프레임에 맞춰주세요'),
                         style: TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 1.2)),
                     const SizedBox(height: 28),
                     Row(
@@ -266,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ],
                     ),
                     const SizedBox(height: 6),
-                    const Text('분석 결과는 참고용입니다',
+                    Text(context.tr('분석 결과는 참고용입니다'),
                         style: TextStyle(color: Colors.white24, fontSize: 11, letterSpacing: 0.5)),
                   ],
                 ),
@@ -300,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen>
                   const Text('BITE LENS',
                       style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 4)),
                   const SizedBox(height: 4),
-                  const Text('AI 음식 분석기', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                  Text(context.tr('AI 음식 분석기'), style: const TextStyle(color: Colors.white38, fontSize: 12)),
                 ],
               ),
             ),
@@ -319,10 +320,10 @@ class _HomeScreenState extends State<HomeScreen>
 
             if (!_isProfileSet) const SizedBox(height: 8),
 
-            _DrawerItem(icon: Icons.home_outlined, label: '홈', onTap: () => Navigator.pop(context)),
+            _DrawerItem(icon: Icons.home_outlined, label: context.tr('홈'), onTap: () => Navigator.pop(context)),
             _DrawerItem(
               icon: Icons.history_outlined,
-              label: '분석 기록',
+              label: context.tr('분석 기록'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
@@ -330,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             _DrawerItem(
               icon: Icons.person_outline,
-              label: '내 프로필',
+              label: context.tr('내 프로필'),
               trailing: !_isProfileSet
                   ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -338,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen>
                   color: Colors.deepOrange.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('미설정', style: TextStyle(color: Colors.deepOrange, fontSize: 11)),
+                child: Text(context.tr('미설정'), style: const TextStyle(color: Colors.deepOrange, fontSize: 11)),
               )
                   : null,
               onTap: () {
@@ -351,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             _DrawerItem(
               icon: Icons.settings_outlined,
-              label: '설정',
+              label: context.tr('설정'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
@@ -520,7 +521,7 @@ class _TodayCalBanner extends StatelessWidget {
             children: [
               const Icon(Icons.local_fire_department_outlined, color: Colors.deepOrange, size: 13),
               const SizedBox(width: 5),
-              const Text('오늘', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 0.5)),
+              Text(context.tr('오늘'), style: const TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 0.5)),
               const Spacer(),
               if (ratio != null) ...[
                 Text(
@@ -560,8 +561,8 @@ class _TodayCalBanner extends StatelessWidget {
             const SizedBox(height: 5),
             Text(
               isOver
-                  ? '${(-remaining)} kcal 초과'
-                  : '$remaining kcal 남음',
+                  ? '${(-remaining)} kcal ${context.tr('초과')}'
+                  : '$remaining kcal ${context.tr('남음')}',
               style: TextStyle(
                 color: isOver ? Colors.red.shade300 : Colors.white38,
                 fontSize: 10,
@@ -572,11 +573,11 @@ class _TodayCalBanner extends StatelessWidget {
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _MacroMini(label: '탄', value: carbs, goal: carbGoal!, color: Colors.blue.shade300)),
+                Expanded(child: _MacroMini(label: context.tr('탄'), value: carbs, goal: carbGoal!, color: Colors.blue.shade300)),
                 const SizedBox(width: 8),
-                Expanded(child: _MacroMini(label: '단', value: protein, goal: proteinGoal!, color: Colors.green.shade400)),
+                Expanded(child: _MacroMini(label: context.tr('단'), value: protein, goal: proteinGoal!, color: Colors.green.shade400)),
                 const SizedBox(width: 8),
-                Expanded(child: _MacroMini(label: '지', value: fat, goal: fatGoal!, color: Colors.orange.shade300)),
+                Expanded(child: _MacroMini(label: context.tr('지'), value: fat, goal: fatGoal!, color: Colors.orange.shade300)),
               ],
             ),
           ],
@@ -652,13 +653,13 @@ class _CameraPermissionDeniedView extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             const Text(
-              '카메라 권한이 필요해요',
+              context.tr('카메라 권한이 필요해요'),
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             const Text(
-              '음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.',
+              context.tr('음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'),
               style: TextStyle(color: Colors.white38, fontSize: 14, height: 1.7),
               textAlign: TextAlign.center,
             ),
@@ -673,7 +674,7 @@ class _CameraPermissionDeniedView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Text(
-                  '설정으로 이동',
+                  context.tr('설정으로 이동'),
                   style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
                   textAlign: TextAlign.center,
                 ),
@@ -681,7 +682,7 @@ class _CameraPermissionDeniedView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text(
-              '설정 → 개인 정보 보호 → 카메라',
+              context.tr('설정 → 개인 정보 보호 → 카메라'),
               style: TextStyle(color: Colors.white24, fontSize: 12),
             ),
           ],

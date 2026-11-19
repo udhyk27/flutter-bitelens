@@ -6,6 +6,7 @@ import 'package:bitelens/services/database_service.dart';
 import 'package:bitelens/widgets/analysis_edit_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bitelens/l10n/app_locale.dart';
 
 enum _DateFilter {
   all('전체'),
@@ -248,8 +249,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final target = DateTime(dt.year, dt.month, dt.day);
     final diff = today.difference(target).inDays;
-    if (diff == 0) return '오늘';
-    if (diff == 1) return '어제';
+    if (diff == 0) return context.tr('오늘');
+    if (diff == 1) return context.tr('어제');
     return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
   }
 
@@ -310,7 +311,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '총 ${_history.length}${_hasMore ? '+' : ''}개',
+                    '${context.tr('Total')} ${_history.length}${_hasMore ? '+' : ''}',
                     style: const TextStyle(color: Colors.white38, fontSize: 11),
                   ),
                 ),
@@ -418,7 +419,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                         const Spacer(),
                                         if (totalCal > 0)
                                           Text(
-                                            '총 $totalCal kcal',
+                                            '${context.tr('Total')} $totalCal kcal',
                                             style: const TextStyle(
                                               color: Colors.deepOrange,
                                               fontSize: 11,
@@ -483,9 +484,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     onChanged: _onSearchChanged,
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                     cursorColor: Colors.deepOrange,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       isDense: true,
-                      hintText: '음식 이름 검색',
+                      hintText: context.tr('음식 이름 검색'),
                       hintStyle: TextStyle(color: Colors.white24, fontSize: 14),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 12),
@@ -534,7 +535,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ),
                     ),
                     child: Text(
-                      f.label,
+                      context.tr(f.label),
                       style: TextStyle(
                         color: sel ? Colors.white : Colors.white54,
                         fontSize: 12,
@@ -565,9 +566,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _isFiltering
+            context.tr(_isFiltering
                 ? '조건에 맞는 기록이 없어요'
-                : (_showFavoritesOnly ? '즐겨찾기한 기록이 없어요' : '분석 기록이 없어요'),
+                : (_showFavoritesOnly ? '즐겨찾기한 기록이 없어요' : '분석 기록이 없어요')),
             style: const TextStyle(
               color: Colors.white30,
               fontSize: 15,
@@ -576,11 +577,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _isFiltering
+            context.tr(_isFiltering
                 ? '검색어나 기간을 바꿔보세요'
                 : (_showFavoritesOnly
                       ? '별표를 눌러 기록을 저장해보세요'
-                      : '음식을 촬영해서 분석해보세요'),
+                      : '음식을 촬영해서 분석해보세요')),
             style: const TextStyle(color: Colors.white12, fontSize: 13),
           ),
         ],
@@ -591,28 +592,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _showDeleteDialog(int id) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          '기록 삭제',
+        title: Text(
+          context.tr('기록 삭제'),
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
-        content: const Text(
-          '이 기록을 삭제할까요?',
+        content: Text(
+          context.tr('이 기록을 삭제할까요?'),
           style: TextStyle(color: Colors.white54, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소', style: TextStyle(color: Colors.white38)),
+            child: Text(context.tr('취소'), style: const TextStyle(color: Colors.white38)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteItem(id);
             },
-            child: const Text('삭제', style: TextStyle(color: Colors.deepOrange)),
+            child: Text(context.tr('삭제'), style: const TextStyle(color: Colors.deepOrange)),
           ),
         ],
       ),
@@ -694,7 +695,9 @@ class _WeeklyCalChart extends StatelessWidget {
     }
 
     final maxCal = calsByDay.values.fold<int>(0, (a, b) => a > b ? a : b);
-    final dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+    final dayNames = ['월', '화', '수', '목', '금', '토', '일']
+        .map(context.tr)
+        .toList();
     const maxBarH = 56.0;
 
     return Container(
@@ -715,8 +718,8 @@ class _WeeklyCalChart extends StatelessWidget {
                 size: 13,
               ),
               const SizedBox(width: 6),
-              const Text(
-                '이번 주 섭취 칼로리',
+              Text(
+                context.tr('이번 주 섭취 칼로리'),
                 style: TextStyle(
                   color: Colors.white30,
                   fontSize: 11,
@@ -726,7 +729,7 @@ class _WeeklyCalChart extends StatelessWidget {
               if (tdee != null) ...[
                 const Spacer(),
                 Text(
-                  '목표 ${tdee!.toStringAsFixed(0)} kcal',
+                  '${context.tr('Goal')} ${tdee!.toStringAsFixed(0)} kcal',
                   style: const TextStyle(color: Colors.white24, fontSize: 10),
                 ),
               ],
@@ -827,12 +830,13 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foodName = NutritionParser.foodName(result);
+    final rawFoodName = NutritionParser.foodName(result);
+    final foodName = rawFoodName == '음식' ? context.tr(rawFoodName) : rawFoodName;
     final calories = NutritionParser.calories(result);
     final carbs = NutritionParser.carbs(result);
     final protein = NutritionParser.protein(result);
     final fat = NutritionParser.fat(result);
-    final mealLabel = meal ?? NutritionParser.mealType(createdAt);
+    final mealLabel = context.tr(meal ?? NutritionParser.mealType(createdAt));
     final mealColor = mealColorFor(mealLabel);
     final portion = NutritionParser.portion(result);
 
@@ -967,7 +971,7 @@ class _HistoryCard extends StatelessWidget {
                       children: [
                         Flexible(
                           child: _NutriBadge(
-                            label: '탄',
+                            label: context.tr('탄'),
                             value: carbs,
                             color: Colors.blue.shade300,
                           ),
@@ -975,7 +979,7 @@ class _HistoryCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Flexible(
                           child: _NutriBadge(
-                            label: '단',
+                            label: context.tr('단'),
                             value: protein,
                             color: Colors.green.shade400,
                           ),
@@ -983,7 +987,7 @@ class _HistoryCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Flexible(
                           child: _NutriBadge(
-                            label: '지',
+                            label: context.tr('지'),
                             value: fat,
                             color: Colors.orange.shade300,
                           ),
@@ -1082,7 +1086,7 @@ class _HistoryCard extends StatelessWidget {
                               await Share.shareXFiles(
                                 [XFile(imagePath)],
                                 text: FoodAnalysis.parse(result).displayText,
-                                subject: 'BiteLens 음식 분석 결과',
+                                subject: context.tr('BiteLens 음식 분석 결과'),
                               );
                             } catch (e) {
                               debugPrint('공유 오류: $e');
@@ -1137,8 +1141,8 @@ class _HistoryCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Text(
-                          '분석 결과',
+                        Text(
+                          context.tr('분석 결과'),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 15,
@@ -1243,21 +1247,21 @@ class _NutritionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _MacroItem(
-                  label: '탄수화물',
+                  label: context.tr('탄수화물'),
                   value: NutritionParser.carbs(result),
                   color: Colors.blue.shade300,
                 ),
               ),
               Expanded(
                 child: _MacroItem(
-                  label: '단백질',
+                  label: context.tr('단백질'),
                   value: NutritionParser.protein(result),
                   color: Colors.green.shade400,
                 ),
               ),
               Expanded(
                 child: _MacroItem(
-                  label: '지방',
+                  label: context.tr('지방'),
                   value: NutritionParser.fat(result),
                   color: Colors.orange.shade300,
                 ),
@@ -1275,7 +1279,7 @@ class _NutritionCard extends StatelessWidget {
                 if (NutritionParser.sodium(result) != '-')
                   Expanded(
                     child: _MacroItem(
-                      label: '나트륨',
+                      label: context.tr('나트륨'),
                       value: NutritionParser.sodium(result),
                       color: Colors.yellow.shade600,
                     ),
@@ -1283,7 +1287,7 @@ class _NutritionCard extends StatelessWidget {
                 if (NutritionParser.fiber(result) != '-')
                   Expanded(
                     child: _MacroItem(
-                      label: '식이섬유',
+                      label: context.tr('식이섬유'),
                       value: NutritionParser.fiber(result),
                       color: Colors.teal.shade300,
                     ),
@@ -1335,19 +1339,19 @@ class _MacroBar extends StatelessWidget {
                 _BarLegend(
                   color: Colors.blue.shade300,
                   label:
-                      '탄 ${total > 0 ? (carbs / total * 100).toStringAsFixed(0) : 0}%',
+                      '${context.tr('탄')} ${total > 0 ? (carbs / total * 100).toStringAsFixed(0) : 0}%',
                 ),
                 const SizedBox(width: 12),
                 _BarLegend(
                   color: Colors.green.shade400,
                   label:
-                      '단 ${total > 0 ? (protein / total * 100).toStringAsFixed(0) : 0}%',
+                      '${context.tr('단')} ${total > 0 ? (protein / total * 100).toStringAsFixed(0) : 0}%',
                 ),
                 const SizedBox(width: 12),
                 _BarLegend(
                   color: Colors.orange.shade300,
                   label:
-                      '지 ${total > 0 ? (fat / total * 100).toStringAsFixed(0) : 0}%',
+                      '${context.tr('지')} ${total > 0 ? (fat / total * 100).toStringAsFixed(0) : 0}%',
                 ),
               ],
             ),

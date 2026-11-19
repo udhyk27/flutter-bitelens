@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/food_analysis.dart';
+import '../l10n/app_locale.dart';
 
 /// 끼니 종류 (수동 태그 선택지)
 const List<String> kMealOptions = ['아침', '점심', '간식', '저녁', '야식'];
@@ -147,18 +148,18 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text('기록 수정',
+              Text(context.tr('기록 수정'),
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
-              const Text('AI 추정값을 실제 값으로 보정할 수 있어요',
+              Text(context.tr('AI 추정값을 실제 값으로 보정할 수 있어요'),
                   style: TextStyle(color: Colors.white38, fontSize: 12)),
               const SizedBox(height: 24),
 
-              _label('음식 이름'),
-              _textField(_name, hint: '예: 김치찌개', number: false),
+              _label(context.tr('음식 이름')),
+              _textField(_name, hint: context.tr('예: 김치찌개'), number: false),
               const SizedBox(height: 20),
 
-              _label('끼니'),
+              _label(context.tr('끼니')),
               Wrap(
                 spacing: 8,
                 children: kMealOptions.map((m) {
@@ -173,7 +174,7 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: sel ? c : Colors.white.withValues(alpha: 0.08)),
                       ),
-                      child: Text(m,
+                      child: Text(context.tr(m),
                           style: TextStyle(
                             color: sel ? c : Colors.white54,
                             fontSize: 13,
@@ -185,25 +186,25 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
               ),
               const SizedBox(height: 20),
 
-              _label('칼로리 (kcal)'),
-              _textField(_cal, hint: '예: 450'),
+              _label(context.tr('칼로리 (kcal)')),
+              _textField(_cal, hint: context.tr('예: 450')),
               const SizedBox(height: 20),
 
-              _label('영양소 (g)'),
+              _label(context.tr('영양소 (g)')),
               Row(children: [
-                Expanded(child: _miniField('탄수화물', _carbs)),
+                Expanded(child: _miniField(context.tr('탄수화물'), _carbs)),
                 const SizedBox(width: 10),
-                Expanded(child: _miniField('단백질', _protein)),
+                Expanded(child: _miniField(context.tr('단백질'), _protein)),
                 const SizedBox(width: 10),
-                Expanded(child: _miniField('지방', _fat)),
+                Expanded(child: _miniField(context.tr('지방'), _fat)),
               ]),
 
               if (_showExtra) ...[
                 const SizedBox(height: 12),
                 Row(children: [
-                  Expanded(child: _miniField('나트륨(mg)', _sodium)),
+                  Expanded(child: _miniField(context.tr('나트륨(mg)'), _sodium)),
                   const SizedBox(width: 10),
-                  Expanded(child: _miniField('식이섬유(g)', _fiber)),
+                  Expanded(child: _miniField(context.tr('식이섬유(g)'), _fiber)),
                 ]),
               ],
 
@@ -219,7 +220,7 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Center(
-                        child: Text('취소',
+                        child: Text(context.tr('취소'),
                             style: TextStyle(color: Colors.white54, fontSize: 15, fontWeight: FontWeight.w600)),
                       ),
                     ),
@@ -236,7 +237,7 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Center(
-                        child: Text('저장',
+                        child: Text(context.tr('저장'),
                             style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
                       ),
                     ),
