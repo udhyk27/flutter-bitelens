@@ -342,8 +342,6 @@ class _ResultScreenState extends State<ResultScreen>
 
   @override
   Widget build(BuildContext context) {
-    final parsedCalories = _isLoading ? null : _analysis?.calories;
-
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
@@ -537,6 +535,12 @@ class _ResultScreenState extends State<ResultScreen>
                         message: _result,
                         onRetry: _retryAnalysis,
                       )
+                    else if (_analysis != null)
+                      _ResultHeroSummary(
+                        analysis: _analysis!,
+                        tdee: _tdee,
+                        meal: _meal,
+                      )
                     else
                       Container(
                         width: double.infinity,
@@ -555,15 +559,14 @@ class _ResultScreenState extends State<ResultScreen>
                     if (!_isError && _analysis != null && _analysis!.hasNutrition) ...[
                       const SizedBox(height: 12),
                       _PortionSelector(selected: _portion, onChanged: _setPortion),
-                    ],
-
-                    if (!_isError && _analysis != null) ...[
                       const SizedBox(height: 12),
                       _NutritionCard(analysis: _analysis!),
                     ],
 
-                    if (!_isError && _tdee != null)
-                      _TdeeBanner(tdee: _tdee!, parsedCalories: parsedCalories),
+                    if (!_isError && _analysis?.note?.isNotEmpty == true) ...[
+                      const SizedBox(height: 12),
+                      _AnalysisNoteCard(note: _analysis!.note!),
+                    ],
 
                     const SizedBox(height: 12),
 
@@ -692,17 +695,25 @@ class _AnalysisErrorCard extends StatelessWidget {
   }
 }
 
-// ─── TDEE 기준선 배너 ─────────────────────────────────────────────────
+// ─── 결과 핵심 요약 ───────────────────────────────────────────────────
 
-class _TdeeBanner extends StatelessWidget {
-  final double tdee;
-  final int? parsedCalories;
+class _ResultHeroSummary extends StatelessWidget {
+  final FoodAnalysis analysis;
+  final double? tdee;
+  final String meal;
 
-  const _TdeeBanner({required this.tdee, this.parsedCalories});
+  const _ResultHeroSummary({
+    required this.analysis,
+    required this.tdee,
+    required this.meal,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final double? ratio = parsedCalories != null ? parsedCalories! / tdee : null;
+    final calories = analysis.calories;
+    final double? ratio = calories != null && tdee != null && tdee! > 0
+        ? calories / tdee!
+        : null;
     final double clampedRatio = (ratio ?? 0.0).clamp(0.0, 1.0);
 
     Color barColor;
@@ -726,6 +737,124 @@ class _TdeeBanner extends StatelessWidget {
 
     return Container(
       width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF17120F),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.deepOrange.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.restaurant_outlined, color: mealColorFor(meal), size: 16),
+              const SizedBox(width: 8),
+              Text(context.tr(meal),
+                  style: TextStyle(color: mealColorFor(meal), fontSize: 12, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              Text(context.tr('분석 결과'),
+                  style: const TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 1)),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          Text(
+            analysis.foodName ?? context.tr('음식'),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w800, height: 1.2),
+          ),
+
+          const SizedBox(height: 18),
+
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                calories?.toString() ?? '-',
+                style: TextStyle(color: barColor, fontSize: 42, fontWeight: FontWeight.w800, height: 0.95),
+              ),
+              const SizedBox(width: 7),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Text('kcal', style: TextStyle(color: Colors.white54, fontSize: 15, fontWeight: FontWeight.w600)),
+              ),
+              if (tdee != null) ...[
+                const Spacer(),
+                Container(width: 1, height: 34, color: Colors.white12),
+                const SizedBox(width: 14),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 1),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(context.tr('일일 권장칼로리'),
+                          style: const TextStyle(color: Colors.white30, fontSize: 10)),
+                      const SizedBox(height: 3),
+                      Text('${tdee!.toStringAsFixed(0)} kcal',
+                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+
+          if (tdee != null) ...[
+            const SizedBox(height: 18),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Stack(
+                children: [
+                  Container(height: 6, color: Colors.white.withValues(alpha: 0.07)),
+                  FractionallySizedBox(
+                    widthFactor: clampedRatio,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 700),
+                      curve: Curves.easeOut,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: barColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                Text(ratio != null ? '${(ratio * 100).toStringAsFixed(0)}%' : '-',
+                    style: TextStyle(color: barColor, fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(' ${context.tr('일일 권장칼로리')}',
+                    style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                const Spacer(),
+                Text(comment, style: TextStyle(color: barColor, fontSize: 12)),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 10),
+            Text(comment, style: TextStyle(color: barColor, fontSize: 12)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AnalysisNoteCard extends StatelessWidget {
+  final String note;
+  const _AnalysisNoteCard({required this.note});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF141414),
@@ -735,56 +864,12 @@ class _TdeeBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.local_fire_department_outlined, color: Colors.deepOrange, size: 16),
-              const SizedBox(width: 8),
-              Text(context.tr('일일 권장칼로리 기준'),
-                  style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 0.5)),
-              const Spacer(),
-              Text('${tdee.toStringAsFixed(0)} kcal',
-                  style: const TextStyle(color: Colors.deepOrange, fontSize: 12, fontWeight: FontWeight.w600)),
-            ],
+          Text(
+            context.tr('분석 결과'),
+            style: const TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 1.5),
           ),
-
-          const SizedBox(height: 12),
-
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: Stack(
-              children: [
-                Container(height: 6, color: Colors.white.withValues(alpha: 0.07)),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.easeOut,
-                  height: 6,
-                  width: (MediaQuery.of(context).size.width - 48 - 32) * clampedRatio,
-                  decoration: BoxDecoration(
-                    color: barColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          Row(
-            children: [
-              if (parsedCalories != null) ...[
-                Text('$parsedCalories kcal',
-                    style: TextStyle(color: barColor, fontSize: 13, fontWeight: FontWeight.w700)),
-                const SizedBox(width: 6),
-                Text(
-                  ratio != null ? '(${(ratio * 100).toStringAsFixed(0)}%)' : '',
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
-                ),
-                const Spacer(),
-              ],
-              Text(comment, style: TextStyle(color: barColor, fontSize: 12)),
-            ],
-          ),
+          const SizedBox(height: 8),
+          Text(note, style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.6)),
         ],
       ),
     );
