@@ -578,7 +578,7 @@ class _ResultScreenState extends State<ResultScreen>
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                       ),
-                      child: const Row(
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(Icons.info_outline, color: Colors.white24, size: 14),

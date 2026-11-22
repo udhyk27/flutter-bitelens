@@ -219,7 +219,7 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                         color: Colors.white.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(context.tr('취소'),
                             style: TextStyle(color: Colors.white54, fontSize: 15, fontWeight: FontWeight.w600)),
                       ),
@@ -236,7 +236,7 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                         color: Colors.deepOrange,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(context.tr('저장'),
                             style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
                       ),

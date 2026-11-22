@@ -652,13 +652,13 @@ class _CameraPermissionDeniedView extends StatelessWidget {
               child: const Icon(Icons.no_photography_outlined, color: Colors.white30, size: 36),
             ),
             const SizedBox(height: 28),
-            const Text(
+            Text(
               context.tr('카메라 권한이 필요해요'),
               style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               context.tr('음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'),
               style: TextStyle(color: Colors.white38, fontSize: 14, height: 1.7),
               textAlign: TextAlign.center,
@@ -673,7 +673,7 @@ class _CameraPermissionDeniedView extends StatelessWidget {
                   color: Colors.deepOrange,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Text(
+                child: Text(
                   context.tr('설정으로 이동'),
                   style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
                   textAlign: TextAlign.center,
@@ -681,7 +681,7 @@ class _CameraPermissionDeniedView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               context.tr('설정 → 개인 정보 보호 → 카메라'),
               style: TextStyle(color: Colors.white24, fontSize: 12),
             ),

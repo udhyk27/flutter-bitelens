@@ -219,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.deepOrange.withValues(alpha: 0.2)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.info_outline, color: Colors.deepOrange, size: 18),
                     SizedBox(width: 10),
@@ -473,7 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
                       Icon(Icons.calculate_outlined, color: Colors.white12, size: 40),
                       SizedBox(height: 12),
@@ -963,7 +963,7 @@ class _MetricCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(context.tr('확인'), style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                    child: Text(outerContext.tr('확인'), style: const TextStyle(color: Colors.white54, fontSize: 13)),
                   ),
                 ),
               ),
