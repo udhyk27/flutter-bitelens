@@ -1085,7 +1085,7 @@ class _HistoryCard extends StatelessWidget {
                             try {
                               await Share.shareXFiles(
                                 [XFile(imagePath)],
-                                text: FoodAnalysis.parse(result).displayText,
+                                text: FoodAnalysis.parse(result).localizedDisplayText(context),
                                 subject: context.tr('BiteLens 음식 분석 결과'),
                               );
                             } catch (e) {
@@ -1164,7 +1164,7 @@ class _HistoryCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        FoodAnalysis.parse(result).displayText,
+                        FoodAnalysis.parse(result).localizedDisplayText(context),
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,

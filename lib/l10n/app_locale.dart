@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/food_analysis.dart';
 
 /// Current app UI locale; changing the language rebuilds MaterialApp immediately.
 final ValueNotifier<Locale> appLocale = ValueNotifier(const Locale('ko'));
@@ -27,6 +28,19 @@ extension AppStrings on BuildContext {
     };
     return translations[korean] ?? korean;
   }
+}
+
+extension LocalizedFoodAnalysis on FoodAnalysis {
+  String localizedDisplayText(BuildContext context) => displayTextFor(
+        caloriesLabel: context.tr('칼로리'),
+        carbsLabel: context.tr('탄수화물'),
+        proteinLabel: context.tr('단백질'),
+        fatLabel: context.tr('지방'),
+        sodiumLabel: context.tr('나트륨'),
+        fiberLabel: context.tr('식이섬유'),
+        portionLabel: context.tr('먹은 양'),
+        servingUnit: context.tr('인분'),
+      );
 }
 
 const _english = <String, String>{
@@ -112,6 +126,8 @@ const _english = <String, String>{
   '저녁': 'Dinner',
   '야식': 'Late night',
   '인분': 'servings',
+  '칼로리': 'Calories',
+  '먹은 양': 'Portion eaten',
   'BiteLens 음식 분석 결과': 'BiteLens food analysis',
   '입력한 정보를 기반으로 칼로리 분석 기준이 설정됩니다': 'Your calorie targets will be based on the details you enter',
   '신체 정보': 'Body details',
@@ -120,6 +136,13 @@ const _english = <String, String>{
   '키': 'Height',
   '몸무게': 'Weight',
   '활동량': 'Activity level',
+  '거의 안 함 (사무직)': 'Sedentary (desk job)',
+  '가벼운 활동 (주 1~2회)': 'Light activity (exercise 1–2 days/week)',
+  '보통 (주 3~5회 운동)': 'Moderate (exercise 3–5 days/week)',
+  '활동적 (주 6~7회 운동)': 'Active (exercise 6–7 days/week)',
+  '매우 활동적 (운동선수)': 'Very active (athlete)',
+  '세': 'yr',
+  '확인': 'OK',
   '남성': 'Male',
   '여성': 'Female',
   '저체중': 'Underweight',
@@ -281,6 +304,8 @@ const _japanese = <String, String>{
   '저녁': '夕食',
   '야식': '夜食',
   '인분': '人前',
+  '칼로리': 'カロリー',
+  '먹은 양': '食べた量',
   'BiteLens 음식 분석 결과': 'BiteLens 食品分析結果',
   '입력한 정보를 기반으로 칼로리 분석 기준이 설정됩니다': '入力した情報に基づいてカロリー目標を設定します',
   '신체 정보': '身体情報',
@@ -289,6 +314,13 @@ const _japanese = <String, String>{
   '키': '身長',
   '몸무게': '体重',
   '활동량': '活動量',
+  '거의 안 함 (사무직)': 'ほとんど運動しない (デスクワーク)',
+  '가벼운 활동 (주 1~2회)': '軽い運動 (週1〜2回)',
+  '보통 (주 3~5회 운동)': '普通 (週3〜5回運動)',
+  '활동적 (주 6~7회 운동)': '活動的 (週6〜7回運動)',
+  '매우 활동적 (운동선수)': '非常に活動的 (アスリート)',
+  '세': '歳',
+  '확인': '確認',
   '분석 결과': '分析結果',
   '남성': '男性',
   '여성': '女性',

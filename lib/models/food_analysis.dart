@@ -57,24 +57,35 @@ class FoodAnalysis {
 
   /// 화면 표시 및 공유용 사람이 읽기 좋은 텍스트.
   /// 레거시 기록은 원문을 그대로, JSON 기록은 필드로 요약을 구성한다.
-  String get displayText {
+  String get displayText => displayTextFor();
+
+  String displayTextFor({
+    String caloriesLabel = '칼로리',
+    String carbsLabel = '탄수화물',
+    String proteinLabel = '단백질',
+    String fatLabel = '지방',
+    String sodiumLabel = '나트륨',
+    String fiberLabel = '식이섬유',
+    String portionLabel = '먹은 양',
+    String servingUnit = '인분',
+  }) {
     if (_rawFallback != null) return _rawFallback;
 
     final b = StringBuffer();
     if (foodName != null && foodName!.isNotEmpty) b.writeln(foodName);
     if (caloriesText != null && caloriesText != '-') {
-      b.writeln('칼로리: $caloriesText');
+      b.writeln('$caloriesLabel: $caloriesText');
     }
     final macros = <String>[];
-    if (carbsText != null && carbsText != '-') macros.add('탄수화물 $carbsText');
+    if (carbsText != null && carbsText != '-') macros.add('$carbsLabel $carbsText');
     if (proteinText != null && proteinText != '-') {
-      macros.add('단백질 $proteinText');
+      macros.add('$proteinLabel $proteinText');
     }
-    if (fatText != null && fatText != '-') macros.add('지방 $fatText');
-    if (sodiumText != null && sodiumText != '-') macros.add('나트륨 $sodiumText');
-    if (fiberText != null && fiberText != '-') macros.add('식이섬유 $fiberText');
+    if (fatText != null && fatText != '-') macros.add('$fatLabel $fatText');
+    if (sodiumText != null && sodiumText != '-') macros.add('$sodiumLabel $sodiumText');
+    if (fiberText != null && fiberText != '-') macros.add('$fiberLabel $fiberText');
     if (macros.isNotEmpty) b.writeln(macros.join(' · '));
-    if (portion != 1.0) b.writeln('먹은 양: ${_fmt(portion)}인분');
+    if (portion != 1.0) b.writeln('$portionLabel: ${_fmt(portion)} $servingUnit');
     if (note != null && note!.isNotEmpty) {
       b.writeln();
       b.writeln(note);

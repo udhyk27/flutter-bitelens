@@ -551,7 +551,7 @@ class _ResultScreenState extends State<ResultScreen>
                           border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
                         ),
                         child: Text(
-                          _analysis?.displayText ?? _result,
+                          _analysis?.localizedDisplayText(context) ?? _result,
                           style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.8, letterSpacing: 0.3),
                         ),
                       ),
@@ -632,7 +632,7 @@ class _ResultScreenState extends State<ResultScreen>
     try {
       await Share.shareXFiles(
         [XFile(widget.imagePath)],
-        text: _analysis?.displayText ?? _result,
+        text: _analysis?.localizedDisplayText(context) ?? _result,
         subject: context.tr('BiteLens 음식 분석 결과'),
       );
     } catch (e) {
