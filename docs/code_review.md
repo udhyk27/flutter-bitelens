@@ -1,6 +1,6 @@
 # BiteLens 코드 리뷰
 
-> 최종 확인: 2026-11-11
+> 최종 확인: 2026-11-26
 
 ## 현재 상태
 
@@ -23,9 +23,9 @@ App Check의 Play Integrity/DeviceCheck 등록, 개발용 디버그 토큰, Func
 
 현재 테스트는 `FoodAnalysis` 모델 중심입니다. SQLite 생성·업그레이드, 필터 조합, 페이지네이션, CSV 수식 안전 처리, Cloud Function 입력 검증을 다루는 테스트가 없습니다.
 
-### 유지보수성 및 지역화
+### 유지보수성 및 지역화 — 개선됨
 
-`result_screen.dart`, `profile_screen.dart`, `history_screen.dart`가 대형 파일입니다. 또한 설정의 분석 응답 언어와 앱 UI 언어가 별개이며, UI는 한국어로 고정되어 있습니다.
+설정에서 앱 UI 언어와 분석 응답 언어를 각각 한국어·영어·일본어로 선택할 수 있습니다. 주요 화면, 대화상자, 영양 요약에 세 언어를 적용했습니다. `result_screen.dart`, `profile_screen.dart`, `history_screen.dart`는 여전히 대형 파일이라 기능별 분리가 남아 있습니다.
 
 ## 개선 반영 (2026-11-10)
 

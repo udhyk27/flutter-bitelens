@@ -31,8 +31,12 @@ Future<void> main() async {
     // 디버그 모드에서는 debug provider 사용 → 콘솔에 출력되는 UUID를
     // Firebase 콘솔 > App Check > 앱 > 디버그 토큰 관리에 등록해야 합니다.
     await FirebaseAppCheck.instance.activate(
-      androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-      appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+      androidProvider: kDebugMode
+          ? AndroidProvider.debug
+          : AndroidProvider.playIntegrity,
+      appleProvider: kDebugMode
+          ? AppleProvider.debug
+          : AppleProvider.deviceCheck,
     );
   } catch (e) {
     debugPrint('Firebase 초기화 실패: $e');
@@ -137,7 +141,8 @@ class _AnimatedSplashState extends State<AnimatedSplash> {
 
   @override
   Widget build(BuildContext context) {
-    final String htmlContent = """
+    final String htmlContent =
+        """
     <!DOCTYPE html>
     <html>
       <head>

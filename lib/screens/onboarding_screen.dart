@@ -128,7 +128,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     controller: _pageController,
                     onPageChanged: (i) => setState(() => _currentPage = i),
                     itemCount: _pages.length,
-                    itemBuilder: (context, i) => _OnboardingPage(data: _pages[i]),
+                    itemBuilder: (context, i) =>
+                        _OnboardingPage(data: _pages[i]),
                   ),
                 ),
                 _PageDots(

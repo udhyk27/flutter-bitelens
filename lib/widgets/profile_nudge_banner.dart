@@ -20,12 +20,20 @@ class ProfileNudgeBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.person_add_outlined, color: Colors.deepOrange, size: 18),
+            const Icon(
+              Icons.person_add_outlined,
+              color: Colors.deepOrange,
+              size: 18,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 context.tr('프로필을 설정하면 칼로리 기준이 맞춤 설정돼요'),
-                style: TextStyle(color: Colors.deepOrange, fontSize: 12, height: 1.4),
+                style: TextStyle(
+                  color: Colors.deepOrange,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
               ),
             ),
             const Icon(Icons.chevron_right, color: Colors.deepOrange, size: 16),

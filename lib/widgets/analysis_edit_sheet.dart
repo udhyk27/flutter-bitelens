@@ -88,7 +88,9 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
     _fat = TextEditingController(text: _numStr(a.fat));
     _sodium = TextEditingController(text: _numStr(a.sodium));
     _fiber = TextEditingController(text: _numStr(a.fiber));
-    _meal = kMealOptions.contains(widget.meal) ? widget.meal : mealForDate(DateTime.now());
+    _meal = kMealOptions.contains(widget.meal)
+        ? widget.meal
+        : mealForDate(DateTime.now());
     _showExtra = a.sodium != null || a.fiber != null;
   }
 
@@ -143,16 +145,28 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
             children: [
               Center(
                 child: Container(
-                  width: 36, height: 4,
-                  decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2)),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
-              Text(context.tr('기록 수정'),
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(
+                context.tr('기록 수정'),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(context.tr('AI 추정값을 실제 값으로 보정할 수 있어요'),
-                  style: TextStyle(color: Colors.white38, fontSize: 12)),
+              Text(
+                context.tr('AI 추정값을 실제 값으로 보정할 수 있어요'),
+                style: TextStyle(color: Colors.white38, fontSize: 12),
+              ),
               const SizedBox(height: 24),
 
               _label(context.tr('음식 이름')),
@@ -168,18 +182,27 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
                   return GestureDetector(
                     onTap: () => setState(() => _meal = m),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: sel ? c.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.04),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: sel ? c : Colors.white.withValues(alpha: 0.08)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
                       ),
-                      child: Text(context.tr(m),
-                          style: TextStyle(
-                            color: sel ? c : Colors.white54,
-                            fontSize: 13,
-                            fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                          )),
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? c.withValues(alpha: 0.2)
+                            : Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: sel ? c : Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Text(
+                        context.tr(m),
+                        style: TextStyle(
+                          color: sel ? c : Colors.white54,
+                          fontSize: 13,
+                          fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
                     ),
                   );
                 }).toList(),
@@ -191,59 +214,77 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
               const SizedBox(height: 20),
 
               _label(context.tr('영양소 (g)')),
-              Row(children: [
-                Expanded(child: _miniField(context.tr('탄수화물'), _carbs)),
-                const SizedBox(width: 10),
-                Expanded(child: _miniField(context.tr('단백질'), _protein)),
-                const SizedBox(width: 10),
-                Expanded(child: _miniField(context.tr('지방'), _fat)),
-              ]),
+              Row(
+                children: [
+                  Expanded(child: _miniField(context.tr('탄수화물'), _carbs)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _miniField(context.tr('단백질'), _protein)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _miniField(context.tr('지방'), _fat)),
+                ],
+              ),
 
               if (_showExtra) ...[
                 const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(child: _miniField(context.tr('나트륨(mg)'), _sodium)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _miniField(context.tr('식이섬유(g)'), _fiber)),
-                ]),
+                Row(
+                  children: [
+                    Expanded(child: _miniField(context.tr('나트륨(mg)'), _sodium)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _miniField(context.tr('식이섬유(g)'), _fiber)),
+                  ],
+                ),
               ],
 
               const SizedBox(height: 28),
-              Row(children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(context.tr('취소'),
-                            style: TextStyle(color: Colors.white54, fontSize: 15, fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _save,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.deepOrange,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(context.tr('저장'),
-                            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Center(
+                          child: Text(
+                            context.tr('취소'),
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _save,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Center(
+                          child: Text(
+                            context.tr('저장'),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -252,11 +293,22 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
   }
 
   Widget _label(String t) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(t, style: const TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 0.5)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      t,
+      style: const TextStyle(
+        color: Colors.white54,
+        fontSize: 12,
+        letterSpacing: 0.5,
+      ),
+    ),
+  );
 
-  Widget _textField(TextEditingController c, {String? hint, bool number = true}) {
+  Widget _textField(
+    TextEditingController c, {
+    String? hint,
+    bool number = true,
+  }) {
     return TextField(
       controller: c,
       keyboardType: number
@@ -271,7 +323,10 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
         hintStyle: const TextStyle(color: Colors.white24, fontSize: 14),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.04),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
@@ -292,7 +347,10 @@ class _AnalysisEditSheetState extends State<_AnalysisEditSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white30, fontSize: 10)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white30, fontSize: 10),
+        ),
         const SizedBox(height: 5),
         _textField(c, hint: '-'),
       ],

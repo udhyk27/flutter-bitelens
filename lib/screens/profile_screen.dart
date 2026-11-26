@@ -101,7 +101,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await prefs.setString('macro_ratio', _selectedMacroPreset);
     if (_tdee != null) await prefs.setDouble('tdee', _tdee!);
     if (_carbGoal != null) await prefs.setDouble('carb_goal', _carbGoal!);
-    if (_proteinGoal != null) await prefs.setDouble('protein_goal', _proteinGoal!);
+    if (_proteinGoal != null)
+      await prefs.setDouble('protein_goal', _proteinGoal!);
     if (_fatGoal != null) await prefs.setDouble('fat_goal', _fatGoal!);
   }
 
@@ -111,17 +112,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final weight = double.tryParse(_weightController.text);
 
     // 현실적 범위를 벗어난 입력은 계산하지 않음(극단값으로 인한 왜곡 방지)
-    final valid = age != null &&
+    final valid =
+        age != null &&
         height != null &&
         weight != null &&
-        age >= 1 && age <= 120 &&
-        height >= 50 && height <= 250 &&
-        weight >= 2 && weight <= 400;
+        age >= 1 &&
+        age <= 120 &&
+        height >= 50 &&
+        height <= 250 &&
+        weight >= 2 &&
+        weight <= 400;
 
     if (!valid) {
       setState(() {
-        _bmi = null; _bmr = null; _tdee = null;
-        _carbGoal = null; _proteinGoal = null; _fatGoal = null;
+        _bmi = null;
+        _bmr = null;
+        _tdee = null;
+        _carbGoal = null;
+        _proteinGoal = null;
+        _fatGoal = null;
       });
       return;
     }
@@ -195,12 +204,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Colors.white,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'MY PROFILE',
-            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 6),
+          title: Text(
+            context.tr('MY PROFILE'),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 6,
+            ),
           ),
           centerTitle: true,
         ),
@@ -209,7 +227,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // 안내 배너
               Container(
                 width: double.infinity,
@@ -217,16 +234,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: Colors.deepOrange.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.deepOrange.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: Colors.deepOrange.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.deepOrange, size: 18),
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.deepOrange,
+                      size: 18,
+                    ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         context.tr('입력한 정보를 기반으로 칼로리 분석 기준이 설정됩니다'),
-                        style: TextStyle(color: Colors.deepOrange, fontSize: 12, height: 1.4),
+                        style: TextStyle(
+                          color: Colors.deepOrange,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ],
@@ -242,22 +269,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF111111),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
                 ),
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.person_outline, color: Colors.white38, size: 20),
+                        const Icon(
+                          Icons.person_outline,
+                          color: Colors.white38,
+                          size: 20,
+                        ),
                         const SizedBox(width: 14),
-                        Text(context.tr('성별'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                        Text(
+                          context.tr('성별'),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
                         const Spacer(),
                         _GenderToggle(
                           value: _selectedGender,
                           onChanged: (val) async {
                             setState(() => _selectedGender = val);
-                            _calculate(); await _saveBodyInfo();
+                            _calculate();
+                            await _saveBodyInfo();
                           },
                         ),
                       ],
@@ -267,20 +307,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _BodyInputField(
-                          controller: _ageController, label: context.tr('나이'), unit: context.tr('세'),
-                          onChanged: (_) async { _calculate(); await _saveBodyInfo(); },
-                        )),
+                        Expanded(
+                          child: _BodyInputField(
+                            controller: _ageController,
+                            label: context.tr('나이'),
+                            unit: context.tr('세'),
+                            onChanged: (_) async {
+                              _calculate();
+                              await _saveBodyInfo();
+                            },
+                          ),
+                        ),
                         const SizedBox(width: 10),
-                        Expanded(child: _BodyInputField(
-                          controller: _heightController, label: context.tr('키'), unit: 'cm',
-                          onChanged: (_) async { _calculate(); await _saveBodyInfo(); },
-                        )),
+                        Expanded(
+                          child: _BodyInputField(
+                            controller: _heightController,
+                            label: context.tr('키'),
+                            unit: 'cm',
+                            onChanged: (_) async {
+                              _calculate();
+                              await _saveBodyInfo();
+                            },
+                          ),
+                        ),
                         const SizedBox(width: 10),
-                        Expanded(child: _BodyInputField(
-                          controller: _weightController, label: context.tr('몸무게'), unit: 'kg',
-                          onChanged: (_) async { _calculate(); await _saveBodyInfo(); },
-                        )),
+                        Expanded(
+                          child: _BodyInputField(
+                            controller: _weightController,
+                            label: context.tr('몸무게'),
+                            unit: 'kg',
+                            onChanged: (_) async {
+                              _calculate();
+                              await _saveBodyInfo();
+                            },
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -288,23 +349,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        const Icon(Icons.directions_run_outlined, color: Colors.white38, size: 20),
+                        const Icon(
+                          Icons.directions_run_outlined,
+                          color: Colors.white38,
+                          size: 20,
+                        ),
                         const SizedBox(width: 14),
-                        Text(context.tr('활동량'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                        Text(
+                          context.tr('활동량'),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
                         const Spacer(),
                         DropdownButton<String>(
                           value: _selectedActivity,
                           dropdownColor: const Color(0xFF1A1A1A),
                           underline: const SizedBox(),
-                          icon: const Icon(Icons.chevron_right, color: Colors.white24, size: 18),
-                          style: const TextStyle(color: Colors.white54, fontSize: 12),
+                          icon: const Icon(
+                            Icons.chevron_right,
+                            color: Colors.white24,
+                            size: 18,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
                           items: _activityOptions
-                              .map((e) => DropdownMenuItem(value: e, child: Text(context.tr(e))))
+                              .map(
+                                (e) => DropdownMenuItem(
+                                  value: e,
+                                  child: Text(context.tr(e)),
+                                ),
+                              )
                               .toList(),
                           onChanged: (val) async {
                             if (val != null) {
                               setState(() => _selectedActivity = val);
-                              _calculate(); await _saveBodyInfo();
+                              _calculate();
+                              await _saveBodyInfo();
                             }
                           },
                         ),
@@ -326,29 +410,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('BMI', style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
+                      const Text(
+                        'BMI',
+                        style: TextStyle(
+                          color: Colors.white30,
+                          fontSize: 11,
+                          letterSpacing: 2,
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(_bmi!.toStringAsFixed(1),
-                              style: TextStyle(color: _getBmiColor(_bmi!), fontSize: 40, fontWeight: FontWeight.w700, height: 1)),
+                          Text(
+                            _bmi!.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: _getBmiColor(_bmi!),
+                              fontSize: 40,
+                              fontWeight: FontWeight.w700,
+                              height: 1,
+                            ),
+                          ),
                           const SizedBox(width: 10),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: _getBmiColor(_bmi!).withValues(alpha: 0.15),
+                                color: _getBmiColor(
+                                  _bmi!,
+                                ).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text(context.tr(_getBmiLabel(_bmi!)),
-                                  style: TextStyle(color: _getBmiColor(_bmi!), fontSize: 13, fontWeight: FontWeight.w600)),
+                              child: Text(
+                                context.tr(_getBmiLabel(_bmi!)),
+                                style: TextStyle(
+                                  color: _getBmiColor(_bmi!),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -359,10 +470,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(context.tr('저체중'), style: const TextStyle(color: Colors.white24, fontSize: 10)),
-                          Text(context.tr('정상'), style: const TextStyle(color: Colors.white24, fontSize: 10)),
-                          Text(context.tr('과체중'), style: const TextStyle(color: Colors.white24, fontSize: 10)),
-                          Text(context.tr('비만'), style: const TextStyle(color: Colors.white24, fontSize: 10)),
+                          Text(
+                            context.tr('저체중'),
+                            style: const TextStyle(
+                              color: Colors.white24,
+                              fontSize: 10,
+                            ),
+                          ),
+                          Text(
+                            context.tr('정상'),
+                            style: const TextStyle(
+                              color: Colors.white24,
+                              fontSize: 10,
+                            ),
+                          ),
+                          Text(
+                            context.tr('과체중'),
+                            style: const TextStyle(
+                              color: Colors.white24,
+                              fontSize: 10,
+                            ),
+                          ),
+                          Text(
+                            context.tr('비만'),
+                            style: const TextStyle(
+                              color: Colors.white24,
+                              fontSize: 10,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -371,19 +506,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _MetricCard(
-                      label: context.tr('기초대사량'), sublabel: 'BMR',
-                      value: _bmr!.toStringAsFixed(0), unit: 'kcal',
-                      icon: Icons.favorite_border, color: Colors.white70,
-                      tooltip: context.tr('아무것도 하지 않아도\n심장 박동, 호흡, 체온 유지 등\n생명 활동에 소비되는 최소 칼로리예요.\n\n해리스-베네딕트 공식으로 계산되며\n성별·나이·키·몸무게를 기반으로 합니다.'),
-                    )),
+                    Expanded(
+                      child: _MetricCard(
+                        label: context.tr('기초대사량'),
+                        sublabel: 'BMR',
+                        value: _bmr!.toStringAsFixed(0),
+                        unit: 'kcal',
+                        icon: Icons.favorite_border,
+                        color: Colors.white70,
+                        tooltip: context.tr(
+                          '아무것도 하지 않아도\n심장 박동, 호흡, 체온 유지 등\n생명 활동에 소비되는 최소 칼로리예요.\n\n해리스-베네딕트 공식으로 계산되며\n성별·나이·키·몸무게를 기반으로 합니다.',
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 10),
-                    Expanded(child: _MetricCard(
-                      label: context.tr('일일 권장칼로리'), sublabel: 'TDEE',
-                      value: _tdee!.toStringAsFixed(0), unit: 'kcal',
-                      icon: Icons.local_fire_department_outlined, color: Colors.deepOrange,
-                      tooltip: context.tr('하루 동안 실제로 소비하는\n총 칼로리예요.\n\nBMR × 활동량 계수로 산출되며\n이 수치가 음식 분석 시\n칼로리 기준선으로 사용됩니다.'),
-                    )),
+                    Expanded(
+                      child: _MetricCard(
+                        label: context.tr('일일 권장칼로리'),
+                        sublabel: 'TDEE',
+                        value: _tdee!.toStringAsFixed(0),
+                        unit: 'kcal',
+                        icon: Icons.local_fire_department_outlined,
+                        color: Colors.deepOrange,
+                        tooltip: context.tr(
+                          '하루 동안 실제로 소비하는\n총 칼로리예요.\n\nBMR × 활동량 계수로 산출되며\n이 수치가 음식 분석 시\n칼로리 기준선으로 사용됩니다.',
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -391,7 +540,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     context.tr('* 해리스-베네딕트 공식 기반 추정치입니다. 개인차가 있을 수 있어요.'),
-                    style: TextStyle(color: Colors.white24, fontSize: 11, height: 1.5),
+                    style: TextStyle(
+                      color: Colors.white24,
+                      fontSize: 11,
+                      height: 1.5,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -405,13 +558,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(context.tr('목표 비율'),
-                          style: TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
+                      Text(
+                        context.tr('목표 비율'),
+                        style: TextStyle(
+                          color: Colors.white30,
+                          fontSize: 11,
+                          letterSpacing: 2,
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       Row(
                         children: _macroPresets.keys.map((preset) {
@@ -422,21 +583,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: GestureDetector(
                                 onTap: () => _setMacroPreset(preset),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: sel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.05),
+                                    color: sel
+                                        ? Colors.deepOrange
+                                        : Colors.white.withValues(alpha: 0.05),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: sel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.08),
+                                      color: sel
+                                          ? Colors.deepOrange
+                                          : Colors.white.withValues(
+                                              alpha: 0.08,
+                                            ),
                                     ),
                                   ),
                                   child: Center(
-                                    child: Text(context.tr(preset),
-                                        style: TextStyle(
-                                          color: sel ? Colors.white : Colors.white54,
-                                          fontSize: 13,
-                                          fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                                        )),
+                                    child: Text(
+                                      context.tr(preset),
+                                      style: TextStyle(
+                                        color: sel
+                                            ? Colors.white
+                                            : Colors.white54,
+                                        fontSize: 13,
+                                        fontWeight: sel
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -447,18 +622,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 18),
                       Row(
                         children: [
-                          Expanded(child: _MacroGoalCol(
-                            label: context.tr('탄수화물'), grams: _carbGoal, color: Colors.blue.shade300)),
-                          Expanded(child: _MacroGoalCol(
-                            label: context.tr('단백질'), grams: _proteinGoal, color: Colors.green.shade400)),
-                          Expanded(child: _MacroGoalCol(
-                            label: context.tr('지방'), grams: _fatGoal, color: Colors.orange.shade300)),
+                          Expanded(
+                            child: _MacroGoalCol(
+                              label: context.tr('탄수화물'),
+                              grams: _carbGoal,
+                              color: Colors.blue.shade300,
+                            ),
+                          ),
+                          Expanded(
+                            child: _MacroGoalCol(
+                              label: context.tr('단백질'),
+                              grams: _proteinGoal,
+                              color: Colors.green.shade400,
+                            ),
+                          ),
+                          Expanded(
+                            child: _MacroGoalCol(
+                              label: context.tr('지방'),
+                              grams: _fatGoal,
+                              color: Colors.orange.shade300,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text(
                         context.tr('TDEE와 선택한 비율로 계산된 하루 목표량이에요'),
-                        style: TextStyle(color: Colors.white24, fontSize: 11, height: 1.5),
+                        style: TextStyle(
+                          color: Colors.white24,
+                          fontSize: 11,
+                          height: 1.5,
+                        ),
                       ),
                     ],
                   ),
@@ -471,16 +665,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.calculate_outlined, color: Colors.white12, size: 40),
+                      Icon(
+                        Icons.calculate_outlined,
+                        color: Colors.white12,
+                        size: 40,
+                      ),
                       SizedBox(height: 12),
                       Text(
                         context.tr('신체 정보를 입력하면\nBMI와 기초대사량이 계산됩니다'),
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white24, fontSize: 13, height: 1.6),
+                        style: TextStyle(
+                          color: Colors.white24,
+                          fontSize: 13,
+                          height: 1.6,
+                        ),
                       ),
                     ],
                   ),
@@ -497,22 +701,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF111111),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
-                    const Icon(Icons.add_circle_outline, color: Colors.white38, size: 20),
+                    const Icon(
+                      Icons.add_circle_outline,
+                      color: Colors.white38,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
                         controller: _logWeightController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        style: const TextStyle(color: Colors.white, fontSize: 15),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: context.tr('오늘 몸무게 입력 (kg)'),
-                          hintStyle: TextStyle(color: Colors.white24, fontSize: 14),
+                          hintStyle: TextStyle(
+                            color: Colors.white24,
+                            fontSize: 14,
+                          ),
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
@@ -522,12 +743,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     GestureDetector(
                       onTap: _addWeightLog,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.deepOrange,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(context.tr('기록'), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        child: Text(
+                          context.tr('기록'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -545,7 +776,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
                   ),
                   child: _WeightChart(logs: _weightLog),
                 ),
@@ -556,7 +789,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
@@ -567,14 +802,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final i = entry.key;
                           final row = entry.value;
                           final weight = (row['weight'] as num).toDouble();
-                          final date = DateTime.parse(row['logged_at'] as String);
+                          final date = DateTime.parse(
+                            row['logged_at'] as String,
+                          );
                           final dateStr = '${date.month}/${date.day}';
                           final timeStr =
                               '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
                           double? diff;
                           if (i + 1 < reversed.length) {
-                            diff = weight - (reversed[i + 1]['weight'] as num).toDouble();
+                            diff =
+                                weight -
+                                (reversed[i + 1]['weight'] as num).toDouble();
                           }
 
                           return Dismissible(
@@ -584,9 +823,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               alignment: Alignment.centerRight,
                               padding: const EdgeInsets.only(right: 20),
                               color: Colors.red.shade900.withValues(alpha: 0.5),
-                              child: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                              child: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                                size: 20,
+                              ),
                             ),
-                            onDismissed: (_) => _deleteWeightLog(row['id'] as int),
+                            onDismissed: (_) =>
+                                _deleteWeightLog(row['id'] as int),
                             child: Column(
                               children: [
                                 if (i > 0)
@@ -596,33 +840,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: Colors.white.withValues(alpha: 0.05),
                                   ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
                                   child: Row(
                                     children: [
                                       SizedBox(
                                         width: 38,
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text(dateStr, style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w600)),
-                                            Text(timeStr, style: const TextStyle(color: Colors.white24, fontSize: 11)),
+                                            Text(
+                                              dateStr,
+                                              style: const TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            Text(
+                                              timeStr,
+                                              style: const TextStyle(
+                                                color: Colors.white24,
+                                                fontSize: 11,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      Text('${weight.toStringAsFixed(1)} kg',
-                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                                      Text(
+                                        '${weight.toStringAsFixed(1)} kg',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
                                       const SizedBox(width: 8),
                                       if (diff != null)
                                         Text(
-                                          diff > 0 ? '+${diff.toStringAsFixed(1)}' : diff.toStringAsFixed(1),
+                                          diff > 0
+                                              ? '+${diff.toStringAsFixed(1)}'
+                                              : diff.toStringAsFixed(1),
                                           style: TextStyle(
-                                            color: diff > 0 ? Colors.red.shade300 : Colors.green.shade400,
-                                            fontSize: 12, fontWeight: FontWeight.w500,
+                                            color: diff > 0
+                                                ? Colors.red.shade300
+                                                : Colors.green.shade400,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       const Spacer(),
-                                      const Icon(Icons.chevron_left, color: Colors.white12, size: 16),
+                                      const Icon(
+                                        Icons.chevron_left,
+                                        color: Colors.white12,
+                                        size: 16,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -641,14 +917,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF111111),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
                   ),
                   child: Column(
                     children: [
                       Icon(Icons.show_chart, color: Colors.white12, size: 32),
                       SizedBox(height: 10),
-                      Text(context.tr('기록을 추가하면 추이 그래프가 표시됩니다'),
-                          style: TextStyle(color: Colors.white24, fontSize: 12)),
+                      Text(
+                        context.tr('기록을 추가하면 추이 그래프가 표시됩니다'),
+                        style: TextStyle(color: Colors.white24, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -671,8 +951,10 @@ class _WeightChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (logs.length < 2) {
       return Center(
-        child: Text(context.tr('2개 이상 기록 시 그래프가 표시됩니다'),
-            style: TextStyle(color: Colors.white24, fontSize: 12)),
+        child: Text(
+          context.tr('2개 이상 기록 시 그래프가 표시됩니다'),
+          style: TextStyle(color: Colors.white24, fontSize: 12),
+        ),
       );
     }
     final weights = logs.map((e) => (e['weight'] as num).toDouble()).toList();
@@ -689,11 +971,19 @@ class _ChartPainter extends CustomPainter {
   final List<double> weights;
   final double minW;
   final double range;
-  const _ChartPainter({required this.weights, required this.minW, required this.range});
+  const _ChartPainter({
+    required this.weights,
+    required this.minW,
+    required this.range,
+  });
 
   Offset _toOffset(int i, Size size) {
-    final x = weights.length == 1 ? size.width / 2 : i / (weights.length - 1) * size.width;
-    final y = range == 0 ? size.height / 2 : size.height - ((weights[i] - minW) / range * size.height);
+    final x = weights.length == 1
+        ? size.width / 2
+        : i / (weights.length - 1) * size.width;
+    final y = range == 0
+        ? size.height / 2
+        : size.height - ((weights[i] - minW) / range * size.height);
     return Offset(x, y.clamp(4.0, size.height - 4.0));
   }
 
@@ -715,7 +1005,10 @@ class _ChartPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.deepOrange.withValues(alpha: 0.3), Colors.deepOrange.withValues(alpha: 0.0)],
+          colors: [
+            Colors.deepOrange.withValues(alpha: 0.3),
+            Colors.deepOrange.withValues(alpha: 0.0),
+          ],
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
         ..style = PaintingStyle.fill,
     );
@@ -761,8 +1054,15 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(left: 4),
-    child: Text(title.toUpperCase(),
-        style: const TextStyle(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 2)),
+    child: Text(
+      title.toUpperCase(),
+      style: const TextStyle(
+        color: Colors.white30,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 2,
+      ),
+    ),
   );
 }
 
@@ -770,24 +1070,41 @@ class _MacroGoalCol extends StatelessWidget {
   final String label;
   final double? grams;
   final Color color;
-  const _MacroGoalCol({required this.label, required this.grams, required this.color});
+  const _MacroGoalCol({
+    required this.label,
+    required this.grams,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white30, fontSize: 11)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white30, fontSize: 11),
+        ),
         const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(grams != null ? grams!.toStringAsFixed(0) : '-',
-                style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w700, height: 1)),
+            Text(
+              grams != null ? grams!.toStringAsFixed(0) : '-',
+              style: TextStyle(
+                color: color,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
             const SizedBox(width: 2),
             const Padding(
               padding: EdgeInsets.only(bottom: 2),
-              child: Text('g', style: TextStyle(color: Colors.white38, fontSize: 12)),
+              child: Text(
+                'g',
+                style: TextStyle(color: Colors.white38, fontSize: 12),
+              ),
             ),
           ],
         ),
@@ -810,7 +1127,10 @@ class _GenderToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         children: ['남성', '여성'].map((g) {
           final selected = value == g;
@@ -823,10 +1143,14 @@ class _GenderToggle extends StatelessWidget {
                 color: selected ? Colors.deepOrange : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(context.tr(g), style: TextStyle(
-                color: selected ? Colors.white : Colors.white38,
-                fontSize: 13, fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              )),
+              child: Text(
+                context.tr(g),
+                style: TextStyle(
+                  color: selected ? Colors.white : Colors.white38,
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
             ),
           );
         }).toList(),
@@ -839,14 +1163,26 @@ class _BodyInputField extends StatelessWidget {
   final TextEditingController controller;
   final String label, unit;
   final ValueChanged<String> onChanged;
-  const _BodyInputField({required this.controller, required this.label, required this.unit, required this.onChanged});
+  const _BodyInputField({
+    required this.controller,
+    required this.label,
+    required this.unit,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 1)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white30,
+            fontSize: 11,
+            letterSpacing: 1,
+          ),
+        ),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
@@ -861,7 +1197,10 @@ class _BodyInputField extends StatelessWidget {
             style: const TextStyle(color: Colors.white, fontSize: 15),
             textAlign: TextAlign.center,
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 8,
+              ),
               border: InputBorder.none,
               hintText: unit,
               hintStyle: const TextStyle(color: Colors.white12, fontSize: 13),
@@ -881,35 +1220,49 @@ class _BmiGaugeBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final clamped = bmi.clamp(15.0, 35.0);
     final fraction = (clamped - 15.0) / 20.0;
-    return LayoutBuilder(builder: (context, constraints) {
-      final width = constraints.maxWidth;
-      return SizedBox(
-        height: 8,
-        child: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                gradient: const LinearGradient(colors: [
-                  Color(0xFF64B5F6), Color(0xFF81C784), Color(0xFFFFB74D), Color(0xFFE57373),
-                ]),
-              ),
-            ),
-            Positioned(
-              left: (width * fraction - 4).clamp(0, width - 8),
-              top: -1,
-              child: Container(
-                width: 8, height: 10,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return SizedBox(
+          height: 8,
+          child: Stack(
+            children: [
+              Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(3),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 4)],
+                  borderRadius: BorderRadius.circular(4),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF64B5F6),
+                      Color(0xFF81C784),
+                      Color(0xFFFFB74D),
+                      Color(0xFFE57373),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      );
-    });
+              Positioned(
+                left: (width * fraction - 4).clamp(0, width - 8),
+                top: -1,
+                child: Container(
+                  width: 8,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -919,9 +1272,12 @@ class _MetricCard extends StatelessWidget {
   final Color color;
 
   const _MetricCard({
-    required this.label, required this.sublabel,
-    required this.value, required this.unit,
-    required this.icon, required this.color,
+    required this.label,
+    required this.sublabel,
+    required this.value,
+    required this.unit,
+    required this.icon,
+    required this.color,
     required this.tooltip,
   });
 
@@ -939,31 +1295,58 @@ class _MetricCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                Icon(icon, color: color, size: 18),
-                const SizedBox(width: 8),
-                Text(sublabel,
-                    style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.5)),
-              ]),
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    sublabel,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 4),
-              Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
+              ),
               const SizedBox(height: 16),
               Container(height: 0.5, color: Colors.white12),
               const SizedBox(height: 16),
-              Text(tooltip,
-                  style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.7)),
+              Text(
+                tooltip,
+                style: const TextStyle(
+                  color: Colors.white60,
+                  fontSize: 13,
+                  height: 1.7,
+                ),
+              ),
               const SizedBox(height: 20),
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () => Navigator.pop(outerContext),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 9,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(outerContext.tr('확인'), style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                    child: Text(
+                      outerContext.tr('확인'),
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -986,22 +1369,49 @@ class _MetricCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(icon, color: color, size: 16),
-            const SizedBox(width: 6),
-            Text(sublabel, style: TextStyle(color: color, fontSize: 11, letterSpacing: 1.5)),
-            const Spacer(),
-            GestureDetector(
-              onTap: () => _showTooltip(context),
-              child: const Icon(Icons.help_outline, color: Colors.white12, size: 15),
-            ),
-          ]),
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                sublabel,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => _showTooltip(context),
+                child: const Icon(
+                  Icons.help_outline,
+                  color: Colors.white12,
+                  size: 15,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
-          Text(value, style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.w700, height: 1)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              height: 1,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(unit, style: const TextStyle(color: Colors.white24, fontSize: 12)),
+          Text(
+            unit,
+            style: const TextStyle(color: Colors.white24, fontSize: 12),
+          ),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white38, fontSize: 11),
+          ),
         ],
       ),
     );

@@ -274,8 +274,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'HISTORY',
+        title: Text(
+          context.tr('HISTORY'),
           style: TextStyle(
             color: Colors.white,
             fontSize: 14,
@@ -566,9 +566,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            context.tr(_isFiltering
-                ? '조건에 맞는 기록이 없어요'
-                : (_showFavoritesOnly ? '즐겨찾기한 기록이 없어요' : '분석 기록이 없어요')),
+            context.tr(
+              _isFiltering
+                  ? '조건에 맞는 기록이 없어요'
+                  : (_showFavoritesOnly ? '즐겨찾기한 기록이 없어요' : '분석 기록이 없어요'),
+            ),
             style: const TextStyle(
               color: Colors.white30,
               fontSize: 15,
@@ -577,11 +579,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            context.tr(_isFiltering
-                ? '검색어나 기간을 바꿔보세요'
-                : (_showFavoritesOnly
-                      ? '별표를 눌러 기록을 저장해보세요'
-                      : '음식을 촬영해서 분석해보세요')),
+            context.tr(
+              _isFiltering
+                  ? '검색어나 기간을 바꿔보세요'
+                  : (_showFavoritesOnly
+                        ? '별표를 눌러 기록을 저장해보세요'
+                        : '음식을 촬영해서 분석해보세요'),
+            ),
             style: const TextStyle(color: Colors.white12, fontSize: 13),
           ),
         ],
@@ -606,14 +610,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(context.tr('취소'), style: const TextStyle(color: Colors.white38)),
+            child: Text(
+              context.tr('취소'),
+              style: const TextStyle(color: Colors.white38),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteItem(id);
             },
-            child: Text(context.tr('삭제'), style: const TextStyle(color: Colors.deepOrange)),
+            child: Text(
+              context.tr('삭제'),
+              style: const TextStyle(color: Colors.deepOrange),
+            ),
           ),
         ],
       ),
@@ -695,9 +705,15 @@ class _WeeklyCalChart extends StatelessWidget {
     }
 
     final maxCal = calsByDay.values.fold<int>(0, (a, b) => a > b ? a : b);
-    final dayNames = ['월', '화', '수', '목', '금', '토', '일']
-        .map(context.tr)
-        .toList();
+    final dayNames = [
+      '월',
+      '화',
+      '수',
+      '목',
+      '금',
+      '토',
+      '일',
+    ].map(context.tr).toList();
     const maxBarH = 56.0;
 
     return Container(
@@ -831,7 +847,9 @@ class _HistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rawFoodName = NutritionParser.foodName(result);
-    final foodName = rawFoodName == '음식' ? context.tr(rawFoodName) : rawFoodName;
+    final foodName = rawFoodName == '음식'
+        ? context.tr(rawFoodName)
+        : rawFoodName;
     final calories = NutritionParser.calories(result);
     final carbs = NutritionParser.carbs(result);
     final protein = NutritionParser.protein(result);
@@ -1085,7 +1103,9 @@ class _HistoryCard extends StatelessWidget {
                             try {
                               await Share.shareXFiles(
                                 [XFile(imagePath)],
-                                text: FoodAnalysis.parse(result).localizedDisplayText(context),
+                                text: FoodAnalysis.parse(
+                                  result,
+                                ).localizedDisplayText(context),
                                 subject: context.tr('BiteLens 음식 분석 결과'),
                               );
                             } catch (e) {
@@ -1164,7 +1184,9 @@ class _HistoryCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        FoodAnalysis.parse(result).localizedDisplayText(context),
+                        FoodAnalysis.parse(
+                          result,
+                        ).localizedDisplayText(context),
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,

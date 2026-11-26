@@ -22,10 +22,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _appLanguage = 'ko';
 
   String get _appLanguageName => switch (_appLanguage) {
-        'en' => 'English',
-        'ja' => '日本語',
-        _ => '한국어',
-      };
+    'en' => 'English',
+    'ja' => '日本語',
+    _ => '한국어',
+  };
 
   @override
   void initState() {
@@ -73,8 +73,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'SETTINGS',
+          title: Text(
+            context.tr('SETTINGS'),
             style: TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -273,8 +273,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    WebViewScreen(url: termsUrl, title: context.tr('이용약관')),
+                                builder: (_) => WebViewScreen(
+                                  url: termsUrl,
+                                  title: context.tr('이용약관'),
+                                ),
                               ),
                             );
                           }
@@ -308,7 +310,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
 
     if (rows.isEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text(context.tr('내보낼 기록이 없어요'))));
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.tr('내보낼 기록이 없어요'))),
+      );
       return;
     }
 
@@ -345,7 +349,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(context.tr('취소'), style: const TextStyle(color: Colors.white38)),
+            child: Text(
+              context.tr('취소'),
+              style: const TextStyle(color: Colors.white38),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -354,7 +361,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await DatabaseHelper.instance.clearAll();
               navigator.pop();
             },
-            child: Text(context.tr('삭제'), style: TextStyle(color: Colors.red.shade300)),
+            child: Text(
+              context.tr('삭제'),
+              style: TextStyle(color: Colors.red.shade300),
+            ),
           ),
         ],
       ),
@@ -373,13 +383,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
         content: Text(
-          context.tr('분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.'),
+          context.tr(
+            '분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.',
+          ),
           style: TextStyle(color: Colors.white54, fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(context.tr('취소'), style: const TextStyle(color: Colors.white38)),
+            child: Text(
+              context.tr('취소'),
+              style: const TextStyle(color: Colors.white38),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -388,11 +403,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await _clearAllUserData();
               if (!mounted) return;
               navigator.pop();
-              messenger.showSnackBar(
-                SnackBar(content: Text(clearedMessage)),
-              );
+              messenger.showSnackBar(SnackBar(content: Text(clearedMessage)));
             },
-            child: Text(context.tr('모두 삭제'), style: TextStyle(color: Colors.red.shade300)),
+            child: Text(
+              context.tr('모두 삭제'),
+              style: TextStyle(color: Colors.red.shade300),
+            ),
           ),
         ],
       ),

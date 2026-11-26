@@ -12,6 +12,7 @@ AI 기반 음식 칼로리 분석 Flutter 앱입니다. 음식을 촬영하거�
 - 신체 정보 기반 BMI, BMR, TDEE 계산
 - 체중 로그 및 추이 그래프
 - 응답 언어 선택: 한국어, English, 日本語
+- 앱 UI 언어 선택: 한국어, English, 日本語 (설정에서 변경)
 - Remote Config 기반 AI 모델, 앱 버전, 약관 URL 관리
 
 ## 기술 스택

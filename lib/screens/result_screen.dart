@@ -75,7 +75,10 @@ class _ResultScreenState extends State<ResultScreen>
       duration: const Duration(milliseconds: 600),
     );
 
-    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
 
     _analyzeFood();
   }
@@ -208,8 +211,10 @@ class _ResultScreenState extends State<ResultScreen>
     });
     final id = _savedId;
     if (id != null && _saveHistory) {
-      await DatabaseHelper.instance
-          .updateAnalysis(id, result: base.scale(factor).toJsonString());
+      await DatabaseHelper.instance.updateAnalysis(
+        id,
+        result: base.scale(factor).toJsonString(),
+      );
     }
   }
 
@@ -217,7 +222,11 @@ class _ResultScreenState extends State<ResultScreen>
   Future<void> _openEdit() async {
     final current = _analysis;
     if (current == null) return;
-    final res = await showAnalysisEditSheet(context, analysis: current, meal: _meal);
+    final res = await showAnalysisEditSheet(
+      context,
+      analysis: current,
+      meal: _meal,
+    );
     if (res == null || !mounted) return;
 
     setState(() {
@@ -230,8 +239,11 @@ class _ResultScreenState extends State<ResultScreen>
     if (!_saveHistory) return;
     final id = _savedId;
     if (id != null) {
-      await DatabaseHelper.instance
-          .updateAnalysis(id, result: res.analysis.toJsonString(), meal: res.meal);
+      await DatabaseHelper.instance.updateAnalysis(
+        id,
+        result: res.analysis.toJsonString(),
+        meal: res.meal,
+      );
     } else if (res.analysis.hasNutrition) {
       // 처음엔 영양소가 없어 저장 안 됐다가, 보정으로 값이 생긴 경우 새로 저장
       _savedId = await DatabaseHelper.instance.insertAnalysis(
@@ -262,28 +274,30 @@ class _ResultScreenState extends State<ResultScreen>
       // 발급 실패 시 토큰 없이 진행하되 원인을 로그로 남긴다(401의 근본 원인 추적용).
       String? appCheckToken;
       try {
-        appCheckToken =
-            await FirebaseAppCheck.instance.getToken(forceRefreshToken);
+        appCheckToken = await FirebaseAppCheck.instance.getToken(
+          forceRefreshToken,
+        );
       } catch (e) {
-        debugPrint(
-            'App Check 토큰 발급 실패 (forceRefresh=$forceRefreshToken): $e');
+        debugPrint('App Check 토큰 발급 실패 (forceRefresh=$forceRefreshToken): $e');
       }
 
       try {
-        final response = await http.post(
-          Uri.parse(_analyzeUrl),
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Firebase-AppCheck': ?appCheckToken,
-          },
-          body: jsonEncode({
-            'imageBase64': base64Image,
-            'imageMimeType': imageMimeType,
-            'detailedAnalysis': detailedAnalysis,
-            'language': language,
-            'aiModel': aiModel,
-          }),
-        ).timeout(const Duration(seconds: 30));
+        final response = await http
+            .post(
+              Uri.parse(_analyzeUrl),
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Firebase-AppCheck': ?appCheckToken,
+              },
+              body: jsonEncode({
+                'imageBase64': base64Image,
+                'imageMimeType': imageMimeType,
+                'detailedAnalysis': detailedAnalysis,
+                'language': language,
+                'aiModel': aiModel,
+              }),
+            )
+            .timeout(const Duration(seconds: 30));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
@@ -307,12 +321,14 @@ class _ResultScreenState extends State<ResultScreen>
             continue;
           }
           throw _AnalyzeException(
-              _serverMessage(response) ?? '서버가 혼잡합니다. 잠시 후 다시 시도해주세요.');
+            _serverMessage(response) ?? '서버가 혼잡합니다. 잠시 후 다시 시도해주세요.',
+          );
         } else {
           // 그 외(사진 분석 불가/용량 초과 등)는 재시도해도 소용없으므로
           // 서버가 내려준 안내 메시지를 그대로 표시(없으면 상태코드 폴백).
           throw _AnalyzeException(
-              _serverMessage(response) ?? '서버 오류 (${response.statusCode})');
+            _serverMessage(response) ?? '서버 오류 (${response.statusCode})',
+          );
         }
       } on TimeoutException {
         if (attempt == maxRetries - 1) rethrow;
@@ -365,7 +381,11 @@ class _ResultScreenState extends State<ResultScreen>
         actions: [
           if (!_isLoading && _analysis != null && _analysis!.hasNutrition)
             IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+              icon: const Icon(
+                Icons.edit_outlined,
+                color: Colors.white,
+                size: 20,
+              ),
               onPressed: _openEdit,
             ),
           if (!_isLoading)
@@ -389,16 +409,19 @@ class _ResultScreenState extends State<ResultScreen>
                   child: Image.file(
                     File(widget.imagePath),
                     fit: BoxFit.cover,
-                    cacheWidth: (MediaQuery.of(context).size.width *
-                            MediaQuery.of(context).devicePixelRatio)
-                        .round(),
+                    cacheWidth:
+                        (MediaQuery.of(context).size.width *
+                                MediaQuery.of(context).devicePixelRatio)
+                            .round(),
                   ),
                 ),
                 Positioned.fill(
                   child: Container(color: Colors.black.withValues(alpha: 0.35)),
                 ),
                 Positioned(
-                  bottom: 0, left: 0, right: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
                   height: 80,
                   child: Container(
                     decoration: const BoxDecoration(
@@ -417,7 +440,8 @@ class _ResultScreenState extends State<ResultScreen>
                     builder: (context, child) {
                       return Positioned(
                         top: _scanAnimation.value * 300,
-                        left: 0, right: 0,
+                        left: 0,
+                        right: 0,
                         child: Column(
                           children: [
                             Container(
@@ -433,7 +457,11 @@ class _ResultScreenState extends State<ResultScreen>
                                   ],
                                 ),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.orange.withValues(alpha: 0.5), blurRadius: 10, spreadRadius: 4),
+                                  BoxShadow(
+                                    color: Colors.orange.withValues(alpha: 0.5),
+                                    blurRadius: 10,
+                                    spreadRadius: 4,
+                                  ),
                                 ],
                               ),
                             ),
@@ -443,7 +471,10 @@ class _ResultScreenState extends State<ResultScreen>
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
-                                  colors: [Colors.orange.withValues(alpha: 0.1), Colors.transparent],
+                                  colors: [
+                                    Colors.orange.withValues(alpha: 0.1),
+                                    Colors.transparent,
+                                  ],
                                 ),
                               ),
                             ),
@@ -463,18 +494,30 @@ class _ResultScreenState extends State<ResultScreen>
 
                 if (_isLoading)
                   Positioned(
-                    bottom: 24, left: 0, right: 0,
+                    bottom: 24,
+                    left: 0,
+                    right: 0,
                     child: Center(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           SizedBox(
-                            width: 12, height: 12,
-                            child: CircularProgressIndicator(color: Colors.orange, strokeWidth: 1.5),
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              color: Colors.orange,
+                              strokeWidth: 1.5,
+                            ),
                           ),
                           const SizedBox(width: 10),
-                          Text(context.tr('AI 분석 중...'),
-                              style: TextStyle(color: Colors.white70, fontSize: 13, letterSpacing: 1.5)),
+                          Text(
+                            context.tr('AI 분석 중...'),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -487,115 +530,168 @@ class _ResultScreenState extends State<ResultScreen>
             child: _isLoading
                 ? const SizedBox()
                 : FadeTransition(
-              opacity: _fadeAnimation,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 3, height: 18,
-                          decoration: BoxDecoration(
-                            color: Colors.deepOrange,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(context.tr('분석 결과'),
-                            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1)),
-                        const Spacer(),
-                        if (_analysis != null && _analysis!.hasNutrition)
-                          GestureDetector(
-                            onTap: _openEdit,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: mealColorFor(_meal).withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: mealColorFor(_meal).withValues(alpha: 0.4)),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(context.tr(_meal),
-                                      style: TextStyle(color: mealColorFor(_meal), fontSize: 11, fontWeight: FontWeight.w600)),
-                                  const SizedBox(width: 4),
-                                  Icon(Icons.edit, color: mealColorFor(_meal), size: 11),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    if (_isError)
-                      _AnalysisErrorCard(
-                        message: _result,
-                        onRetry: _retryAnalysis,
-                      )
-                    else if (_analysis != null)
-                      _ResultHeroSummary(
-                        analysis: _analysis!,
-                        tdee: _tdee,
-                        meal: _meal,
-                      )
-                    else
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF141414),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
-                        ),
-                        child: Text(
-                          _analysis?.localizedDisplayText(context) ?? _result,
-                          style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.8, letterSpacing: 0.3),
-                        ),
-                      ),
-
-                    if (!_isError && _analysis != null && _analysis!.hasNutrition) ...[
-                      const SizedBox(height: 12),
-                      _PortionSelector(selected: _portion, onChanged: _setPortion),
-                      const SizedBox(height: 12),
-                      _NutritionCard(analysis: _analysis!),
-                    ],
-
-                    if (!_isError && _analysis?.note?.isNotEmpty == true) ...[
-                      const SizedBox(height: 12),
-                      _AnalysisNoteCard(note: _analysis!.note!),
-                    ],
-
-                    const SizedBox(height: 12),
-
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.03),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                      ),
-                      child: Row(
+                    opacity: _fadeAnimation,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.white24, size: 14),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              context.tr('AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.'),
-                              style: TextStyle(color: Colors.white24, fontSize: 11, height: 1.6),
+                          Row(
+                            children: [
+                              Container(
+                                width: 3,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  color: Colors.deepOrange,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                context.tr('분석 결과'),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_analysis != null && _analysis!.hasNutrition)
+                                GestureDetector(
+                                  onTap: _openEdit,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: mealColorFor(
+                                        _meal,
+                                      ).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: mealColorFor(
+                                          _meal,
+                                        ).withValues(alpha: 0.4),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          context.tr(_meal),
+                                          style: TextStyle(
+                                            color: mealColorFor(_meal),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.edit,
+                                          color: mealColorFor(_meal),
+                                          size: 11,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          if (_isError)
+                            _AnalysisErrorCard(
+                              message: _result,
+                              onRetry: _retryAnalysis,
+                            )
+                          else if (_analysis != null)
+                            _ResultHeroSummary(
+                              analysis: _analysis!,
+                              tdee: _tdee,
+                              meal: _meal,
+                            )
+                          else
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF141414),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.07),
+                                ),
+                              ),
+                              child: Text(
+                                _analysis?.localizedDisplayText(context) ??
+                                    _result,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 15,
+                                  height: 1.8,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+
+                          if (!_isError &&
+                              _analysis != null &&
+                              _analysis!.hasNutrition) ...[
+                            const SizedBox(height: 12),
+                            _PortionSelector(
+                              selected: _portion,
+                              onChanged: _setPortion,
+                            ),
+                            const SizedBox(height: 12),
+                            _NutritionCard(analysis: _analysis!),
+                          ],
+
+                          if (!_isError &&
+                              _analysis?.note?.isNotEmpty == true) ...[
+                            const SizedBox(height: 12),
+                            _AnalysisNoteCard(note: _analysis!.note!),
+                          ],
+
+                          const SizedBox(height: 12),
+
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.03),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.05),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.white24,
+                                  size: 14,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    context.tr(
+                                      'AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.',
+                                    ),
+                                    style: TextStyle(
+                                      color: Colors.white24,
+                                      fontSize: 11,
+                                      height: 1.6,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
           ),
 
           if (!_isLoading)
@@ -612,11 +708,16 @@ class _ResultScreenState extends State<ResultScreen>
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                        child: Center(
-                          child: Text(
-                            context.tr(_isError ? '다른 사진 선택' : '다시 찍기'),
-                            style: const TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 1),
+                      child: Center(
+                        child: Text(
+                          context.tr(_isError ? '다른 사진 선택' : '다시 찍기'),
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
                           ),
+                        ),
                       ),
                     ),
                   ),
@@ -666,14 +767,22 @@ class _AnalysisErrorCard extends StatelessWidget {
               SizedBox(width: 8),
               Text(
                 context.tr('분석을 완료하지 못했어요'),
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             message,
-            style: const TextStyle(color: Colors.white54, fontSize: 13, height: 1.55),
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 13,
+              height: 1.55,
+            ),
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -684,8 +793,12 @@ class _AnalysisErrorCard extends StatelessWidget {
               label: Text(context.tr('다시 분석')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
-                side: BorderSide(color: Colors.deepOrange.withValues(alpha: 0.7)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                side: BorderSide(
+                  color: Colors.deepOrange.withValues(alpha: 0.7),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),
@@ -748,13 +861,29 @@ class _ResultHeroSummary extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.restaurant_outlined, color: mealColorFor(meal), size: 16),
+              Icon(
+                Icons.restaurant_outlined,
+                color: mealColorFor(meal),
+                size: 16,
+              ),
               const SizedBox(width: 8),
-              Text(context.tr(meal),
-                  style: TextStyle(color: mealColorFor(meal), fontSize: 12, fontWeight: FontWeight.w700)),
+              Text(
+                context.tr(meal),
+                style: TextStyle(
+                  color: mealColorFor(meal),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const Spacer(),
-              Text(context.tr('분석 결과'),
-                  style: const TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 1)),
+              Text(
+                context.tr('분석 결과'),
+                style: const TextStyle(
+                  color: Colors.white30,
+                  fontSize: 11,
+                  letterSpacing: 1,
+                ),
+              ),
             ],
           ),
 
@@ -764,7 +893,12 @@ class _ResultHeroSummary extends StatelessWidget {
             analysis.foodName ?? context.tr('음식'),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w800, height: 1.2),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 25,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
           ),
 
           const SizedBox(height: 18),
@@ -774,12 +908,24 @@ class _ResultHeroSummary extends StatelessWidget {
             children: [
               Text(
                 calories?.toString() ?? '-',
-                style: TextStyle(color: barColor, fontSize: 42, fontWeight: FontWeight.w800, height: 0.95),
+                style: TextStyle(
+                  color: barColor,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w800,
+                  height: 0.95,
+                ),
               ),
               const SizedBox(width: 7),
               const Padding(
                 padding: EdgeInsets.only(bottom: 4),
-                child: Text('kcal', style: TextStyle(color: Colors.white54, fontSize: 15, fontWeight: FontWeight.w600)),
+                child: Text(
+                  'kcal',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               if (tdee != null) ...[
                 const Spacer(),
@@ -790,11 +936,22 @@ class _ResultHeroSummary extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(context.tr('일일 권장칼로리'),
-                          style: const TextStyle(color: Colors.white30, fontSize: 10)),
+                      Text(
+                        context.tr('일일 권장칼로리'),
+                        style: const TextStyle(
+                          color: Colors.white30,
+                          fontSize: 10,
+                        ),
+                      ),
                       const SizedBox(height: 3),
-                      Text('${tdee!.toStringAsFixed(0)} kcal',
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                      Text(
+                        '${tdee!.toStringAsFixed(0)} kcal',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -808,7 +965,10 @@ class _ResultHeroSummary extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: Stack(
                 children: [
-                  Container(height: 6, color: Colors.white.withValues(alpha: 0.07)),
+                  Container(
+                    height: 6,
+                    color: Colors.white.withValues(alpha: 0.07),
+                  ),
                   FractionallySizedBox(
                     widthFactor: clampedRatio,
                     child: AnimatedContainer(
@@ -829,10 +989,18 @@ class _ResultHeroSummary extends StatelessWidget {
 
             Row(
               children: [
-                Text(ratio != null ? '${(ratio * 100).toStringAsFixed(0)}%' : '-',
-                    style: TextStyle(color: barColor, fontSize: 12, fontWeight: FontWeight.w700)),
-                Text(' ${context.tr('일일 권장칼로리')}',
-                    style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                Text(
+                  ratio != null ? '${(ratio * 100).toStringAsFixed(0)}%' : '-',
+                  style: TextStyle(
+                    color: barColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  ' ${context.tr('일일 권장칼로리')}',
+                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                ),
                 const Spacer(),
                 Text(comment, style: TextStyle(color: barColor, fontSize: 12)),
               ],
@@ -866,10 +1034,21 @@ class _AnalysisNoteCard extends StatelessWidget {
         children: [
           Text(
             context.tr('분석 결과'),
-            style: const TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 1.5),
+            style: const TextStyle(
+              color: Colors.white30,
+              fontSize: 11,
+              letterSpacing: 1.5,
+            ),
           ),
           const SizedBox(height: 8),
-          Text(note, style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.6)),
+          Text(
+            note,
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 13,
+              height: 1.6,
+            ),
+          ),
         ],
       ),
     );
@@ -892,19 +1071,59 @@ class _FramePainter extends CustomPainter {
 
     canvas.drawLine(Offset(r, 0), Offset(len, 0), paint);
     canvas.drawLine(Offset(0, r), Offset(0, len), paint);
-    canvas.drawArc(const Rect.fromLTWH(0, 0, r * 2, r * 2), 3.14, 1.57, false, paint);
+    canvas.drawArc(
+      const Rect.fromLTWH(0, 0, r * 2, r * 2),
+      3.14,
+      1.57,
+      false,
+      paint,
+    );
 
-    canvas.drawLine(Offset(size.width - len, 0), Offset(size.width - r, 0), paint);
+    canvas.drawLine(
+      Offset(size.width - len, 0),
+      Offset(size.width - r, 0),
+      paint,
+    );
     canvas.drawLine(Offset(size.width, r), Offset(size.width, len), paint);
-    canvas.drawArc(Rect.fromLTWH(size.width - r * 2, 0, r * 2, r * 2), 4.71, 1.57, false, paint);
+    canvas.drawArc(
+      Rect.fromLTWH(size.width - r * 2, 0, r * 2, r * 2),
+      4.71,
+      1.57,
+      false,
+      paint,
+    );
 
-    canvas.drawLine(Offset(0, size.height - len), Offset(0, size.height - r), paint);
+    canvas.drawLine(
+      Offset(0, size.height - len),
+      Offset(0, size.height - r),
+      paint,
+    );
     canvas.drawLine(Offset(r, size.height), Offset(len, size.height), paint);
-    canvas.drawArc(Rect.fromLTWH(0, size.height - r * 2, r * 2, r * 2), 1.57, 1.57, false, paint);
+    canvas.drawArc(
+      Rect.fromLTWH(0, size.height - r * 2, r * 2, r * 2),
+      1.57,
+      1.57,
+      false,
+      paint,
+    );
 
-    canvas.drawLine(Offset(size.width, size.height - len), Offset(size.width, size.height - r), paint);
-    canvas.drawLine(Offset(size.width - len, size.height), Offset(size.width - r, size.height), paint);
-    canvas.drawArc(Rect.fromLTWH(size.width - r * 2, size.height - r * 2, r * 2, r * 2), 0, 1.57, false, paint);
+    canvas.drawLine(
+      Offset(size.width, size.height - len),
+      Offset(size.width, size.height - r),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width - len, size.height),
+      Offset(size.width - r, size.height),
+      paint,
+    );
+    canvas.drawArc(
+      Rect.fromLTWH(size.width - r * 2, size.height - r * 2, r * 2, r * 2),
+      0,
+      1.57,
+      false,
+      paint,
+    );
   }
 
   @override
@@ -938,18 +1157,30 @@ String _detectMime(Uint8List b) {
     return 'image/jpeg';
   }
   if (b.length >= 8 &&
-      b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47) {
+      b[0] == 0x89 &&
+      b[1] == 0x50 &&
+      b[2] == 0x4E &&
+      b[3] == 0x47) {
     return 'image/png';
   }
   // WebP: 'RIFF'....'WEBP'
   if (b.length >= 12 &&
-      b[0] == 0x52 && b[1] == 0x49 && b[2] == 0x46 && b[3] == 0x46 &&
-      b[8] == 0x57 && b[9] == 0x45 && b[10] == 0x42 && b[11] == 0x50) {
+      b[0] == 0x52 &&
+      b[1] == 0x49 &&
+      b[2] == 0x46 &&
+      b[3] == 0x46 &&
+      b[8] == 0x57 &&
+      b[9] == 0x45 &&
+      b[10] == 0x42 &&
+      b[11] == 0x50) {
     return 'image/webp';
   }
   // HEIC/HEIF: 'ftyp' 박스 뒤 브랜드(heic/heix/hevc/mif1 등)로 판별
   if (b.length >= 12 &&
-      b[4] == 0x66 && b[5] == 0x74 && b[6] == 0x79 && b[7] == 0x70) {
+      b[4] == 0x66 &&
+      b[5] == 0x74 &&
+      b[6] == 0x79 &&
+      b[7] == 0x70) {
     final brand = String.fromCharCodes(b.sublist(8, 12)).toLowerCase();
     if (brand.startsWith('hei') ||
         brand.startsWith('hev') ||
@@ -992,13 +1223,25 @@ class _PortionSelector extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.restaurant_outlined, color: Colors.deepOrange, size: 15),
+              const Icon(
+                Icons.restaurant_outlined,
+                color: Colors.deepOrange,
+                size: 15,
+              ),
               const SizedBox(width: 8),
-              Text(context.tr('먹은 양'),
-                  style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 0.5)),
+              Text(
+                context.tr('먹은 양'),
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                  letterSpacing: 0.5,
+                ),
+              ),
               const Spacer(),
               Text(
-                selected == 1.0 ? context.tr('1인분 기준') : '${_num(selected)} ${context.tr('인분')}',
+                selected == 1.0
+                    ? context.tr('1인분 기준')
+                    : '${_num(selected)} ${context.tr('인분')}',
                 style: const TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ],
@@ -1015,10 +1258,14 @@ class _PortionSelector extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
-                        color: isSel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.05),
+                        color: isSel
+                            ? Colors.deepOrange
+                            : Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isSel ? Colors.deepOrange : Colors.white.withValues(alpha: 0.08),
+                          color: isSel
+                              ? Colors.deepOrange
+                              : Colors.white.withValues(alpha: 0.08),
                         ),
                       ),
                       child: Center(
@@ -1027,7 +1274,9 @@ class _PortionSelector extends StatelessWidget {
                           style: TextStyle(
                             color: isSel ? Colors.white : Colors.white54,
                             fontSize: 13,
-                            fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: isSel
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                         ),
                       ),
@@ -1060,7 +1309,8 @@ class _NutritionCard extends StatelessWidget {
     final fat = analysis.fat ?? 0;
     final total = carbs + protein + fat;
 
-    if (carbsStr == '-' && proteinStr == '-' && fatStr == '-') return const SizedBox.shrink();
+    if (carbsStr == '-' && proteinStr == '-' && fatStr == '-')
+      return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
@@ -1073,7 +1323,14 @@ class _NutritionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.tr('영양소'), style: const TextStyle(color: Colors.white30, fontSize: 11, letterSpacing: 2)),
+          Text(
+            context.tr('영양소'),
+            style: const TextStyle(
+              color: Colors.white30,
+              fontSize: 11,
+              letterSpacing: 2,
+            ),
+          ),
           const SizedBox(height: 14),
 
           if (total > 0) ...[
@@ -1081,43 +1338,104 @@ class _NutritionCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: SizedBox(
                 height: 6,
-                child: LayoutBuilder(builder: (context, constraints) {
-                  final w = constraints.maxWidth;
-                  return Row(children: [
-                    Container(width: total > 0 ? carbs / total * w : 0, color: Colors.blue.shade300),
-                    Container(width: total > 0 ? protein / total * w : 0, color: Colors.green.shade400),
-                    Container(width: total > 0 ? fat / total * w : 0, color: Colors.orange.shade300),
-                  ]);
-                }),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final w = constraints.maxWidth;
+                    return Row(
+                      children: [
+                        Container(
+                          width: total > 0 ? carbs / total * w : 0,
+                          color: Colors.blue.shade300,
+                        ),
+                        Container(
+                          width: total > 0 ? protein / total * w : 0,
+                          color: Colors.green.shade400,
+                        ),
+                        Container(
+                          width: total > 0 ? fat / total * w : 0,
+                          color: Colors.orange.shade300,
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 6),
-            Row(children: [
-              _Legend(color: Colors.blue.shade300, label: '${context.tr('탄')} ${(carbs/total*100).toStringAsFixed(0)}%'),
-              const SizedBox(width: 12),
-              _Legend(color: Colors.green.shade400, label: '${context.tr('단')} ${(protein/total*100).toStringAsFixed(0)}%'),
-              const SizedBox(width: 12),
-              _Legend(color: Colors.orange.shade300, label: '${context.tr('지')} ${(fat/total*100).toStringAsFixed(0)}%'),
-            ]),
+            Row(
+              children: [
+                _Legend(
+                  color: Colors.blue.shade300,
+                  label:
+                      '${context.tr('탄')} ${(carbs / total * 100).toStringAsFixed(0)}%',
+                ),
+                const SizedBox(width: 12),
+                _Legend(
+                  color: Colors.green.shade400,
+                  label:
+                      '${context.tr('단')} ${(protein / total * 100).toStringAsFixed(0)}%',
+                ),
+                const SizedBox(width: 12),
+                _Legend(
+                  color: Colors.orange.shade300,
+                  label:
+                      '${context.tr('지')} ${(fat / total * 100).toStringAsFixed(0)}%',
+                ),
+              ],
+            ),
             const SizedBox(height: 14),
           ],
 
-          Row(children: [
-            Expanded(child: _MacroCol(label: context.tr('탄수화물'), value: carbsStr, color: Colors.blue.shade300)),
-            Expanded(child: _MacroCol(label: context.tr('단백질'), value: proteinStr, color: Colors.green.shade400)),
-            Expanded(child: _MacroCol(label: context.tr('지방'), value: fatStr, color: Colors.orange.shade300)),
-          ]),
+          Row(
+            children: [
+              Expanded(
+                child: _MacroCol(
+                  label: context.tr('탄수화물'),
+                  value: carbsStr,
+                  color: Colors.blue.shade300,
+                ),
+              ),
+              Expanded(
+                child: _MacroCol(
+                  label: context.tr('단백질'),
+                  value: proteinStr,
+                  color: Colors.green.shade400,
+                ),
+              ),
+              Expanded(
+                child: _MacroCol(
+                  label: context.tr('지방'),
+                  value: fatStr,
+                  color: Colors.orange.shade300,
+                ),
+              ),
+            ],
+          ),
 
           if (sodiumStr != null || fiberStr != null) ...[
             const SizedBox(height: 12),
             Container(height: 0.5, color: Colors.white.withValues(alpha: 0.06)),
             const SizedBox(height: 12),
-            Row(children: [
-              if (sodiumStr != null)
-                Expanded(child: _MacroCol(label: context.tr('나트륨'), value: sodiumStr, color: Colors.yellow.shade600)),
-              if (fiberStr != null)
-                Expanded(child: _MacroCol(label: context.tr('식이섬유'), value: fiberStr, color: Colors.teal.shade300)),
-            ]),
+            Row(
+              children: [
+                if (sodiumStr != null)
+                  Expanded(
+                    child: _MacroCol(
+                      label: context.tr('나트륨'),
+                      value: sodiumStr,
+                      color: Colors.yellow.shade600,
+                    ),
+                  ),
+                if (fiberStr != null)
+                  Expanded(
+                    child: _MacroCol(
+                      label: context.tr('식이섬유'),
+                      value: fiberStr,
+                      color: Colors.teal.shade300,
+                    ),
+                  ),
+              ],
+            ),
           ],
         ],
       ),
@@ -1133,7 +1451,11 @@ class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
       const SizedBox(width: 4),
       Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
     ],
@@ -1143,15 +1465,33 @@ class _Legend extends StatelessWidget {
 class _MacroCol extends StatelessWidget {
   final String label, value;
   final Color color;
-  const _MacroCol({required this.label, required this.value, required this.color});
+  const _MacroCol({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: const TextStyle(color: Colors.white30, fontSize: 10, letterSpacing: 0.5)),
+      Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white30,
+          fontSize: 10,
+          letterSpacing: 0.5,
+        ),
+      ),
       const SizedBox(height: 4),
-      Text(value, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600)),
+      Text(
+        value,
+        style: TextStyle(
+          color: color,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     ],
   );
 }

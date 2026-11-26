@@ -62,28 +62,35 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _initCamera() {
-    final cam = CameraController(widget.cameras[0], ResolutionPreset.max, enableAudio: false);
+    final cam = CameraController(
+      widget.cameras[0],
+      ResolutionPreset.max,
+      enableAudio: false,
+    );
     controller = cam;
-    cam.initialize().then((_) {
-      if (!mounted) return;
-      setState(() => _isInitialized = true);
-    }).catchError((Object e) {
-      if (!mounted) return;
-      if (e is CameraException) {
-        const deniedCodes = [
-          'CameraAccessDenied',
-          'CameraAccessDeniedWithoutPrompt',
-          'CameraAccessRestricted',
-          'AudioAccessDenied',
-          'AudioAccessDeniedWithoutPrompt',
-        ];
-        if (deniedCodes.contains(e.code)) {
-          setState(() => _cameraPermissionDenied = true);
-          return;
-        }
-      }
-      debugPrint('카메라 초기화 오류: $e');
-    });
+    cam
+        .initialize()
+        .then((_) {
+          if (!mounted) return;
+          setState(() => _isInitialized = true);
+        })
+        .catchError((Object e) {
+          if (!mounted) return;
+          if (e is CameraException) {
+            const deniedCodes = [
+              'CameraAccessDenied',
+              'CameraAccessDeniedWithoutPrompt',
+              'CameraAccessRestricted',
+              'AudioAccessDenied',
+              'AudioAccessDeniedWithoutPrompt',
+            ];
+            if (deniedCodes.contains(e.code)) {
+              setState(() => _cameraPermissionDenied = true);
+              return;
+            }
+          }
+          debugPrint('카메라 초기화 오류: $e');
+        });
   }
 
   @override
@@ -131,7 +138,10 @@ class _HomeScreenState extends State<HomeScreen>
     final weight = prefs.getString('weight') ?? '';
     final age = prefs.getString('age') ?? '';
     if (!mounted) return;
-    setState(() => _isProfileSet = height.isNotEmpty && weight.isNotEmpty && age.isNotEmpty);
+    setState(
+      () => _isProfileSet =
+          height.isNotEmpty && weight.isNotEmpty && age.isNotEmpty,
+    );
   }
 
   Future<void> _loadTodayStats() async {
@@ -174,7 +184,12 @@ class _HomeScreenState extends State<HomeScreen>
         elevation: 0,
         title: const Text(
           'BITE LENS',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 6),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 6,
+          ),
         ),
         centerTitle: true,
         leading: Builder(
@@ -187,10 +202,15 @@ class _HomeScreenState extends State<HomeScreen>
               // 프로필 미설정 시 빨간 점
               if (!_isProfileSet)
                 Positioned(
-                  top: 10, right: 10,
+                  top: 10,
+                  right: 10,
                   child: Container(
-                    width: 7, height: 7,
-                    decoration: const BoxDecoration(color: Colors.deepOrange, shape: BoxShape.circle),
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Colors.deepOrange,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
             ],
@@ -204,79 +224,113 @@ class _HomeScreenState extends State<HomeScreen>
           ? _CameraPermissionDeniedView(onOpenSettings: _openAppSettings)
           : _isInitialized
           ? Stack(
-        children: [
-          Positioned.fill(child: CameraPreview(controller!)),
-          Positioned(
-            top: 0, left: 0, right: 0, height: 160,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0, left: 0, right: 0, height: 220,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                  colors: [Colors.black.withValues(alpha: 0.85), Colors.transparent],
-                ),
-              ),
-            ),
-          ),
-          Center(child: _ScanFrame()),
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(40, 0, 40, 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_todayCalories > 0 || _tdee != null)
-                      _TodayCalBanner(
-                        todayCalories: _todayCalories,
-                        tdee: _tdee,
-                        carbs: _todayCarbs,
-                        protein: _todayProtein,
-                        fat: _todayFat,
-                        carbGoal: _carbGoal,
-                        proteinGoal: _proteinGoal,
-                        fatGoal: _fatGoal,
+              children: [
+                Positioned.fill(child: CameraPreview(controller!)),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 160,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.7),
+                          Colors.transparent,
+                        ],
                       ),
-                    if (_todayCalories > 0 || _tdee != null) const SizedBox(height: 12),
-                    Text(context.tr('음식을 프레임에 맞춰주세요'),
-                        style: TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 1.2)),
-                    const SizedBox(height: 28),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _GalleryButton(onTap: _pickFromGallery),
-                        const SizedBox(width: 36),
-                        ScaleTransition(
-                          scale: _pulseAnimation,
-                          child: _ShutterButton(onTap: _takePicture),
-                        ),
-                        const SizedBox(width: 36),
-                        const SizedBox(width: 56),
-                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(context.tr('분석 결과는 참고용입니다'),
-                        style: TextStyle(color: Colors.white24, fontSize: 11, letterSpacing: 0.5)),
-                  ],
+                  ),
                 ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 220,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.85),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Center(child: _ScanFrame()),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(40, 0, 40, 32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_todayCalories > 0 || _tdee != null)
+                            _TodayCalBanner(
+                              todayCalories: _todayCalories,
+                              tdee: _tdee,
+                              carbs: _todayCarbs,
+                              protein: _todayProtein,
+                              fat: _todayFat,
+                              carbGoal: _carbGoal,
+                              proteinGoal: _proteinGoal,
+                              fatGoal: _fatGoal,
+                            ),
+                          if (_todayCalories > 0 || _tdee != null)
+                            const SizedBox(height: 12),
+                          Text(
+                            context.tr('음식을 프레임에 맞춰주세요'),
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 13,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              _GalleryButton(onTap: _pickFromGallery),
+                              const SizedBox(width: 36),
+                              ScaleTransition(
+                                scale: _pulseAnimation,
+                                child: _ShutterButton(onTap: _takePicture),
+                              ),
+                              const SizedBox(width: 36),
+                              const SizedBox(width: 56),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            context.tr('분석 결과는 참고용입니다'),
+                            style: TextStyle(
+                              color: Colors.white24,
+                              fontSize: 11,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : const Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 1,
               ),
             ),
-          ),
-        ],
-      )
-          : const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 1)),
     );
   }
 
@@ -293,15 +347,33 @@ class _HomeScreenState extends State<HomeScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(color: Colors.deepOrange, borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.restaurant, color: Colors.white, size: 20),
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.deepOrange,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.restaurant,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('BITE LENS',
-                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 4)),
+                  const Text(
+                    'BITE LENS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 4,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(context.tr('AI 음식 분석기'), style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  Text(
+                    context.tr('AI 음식 분석기'),
+                    style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -314,19 +386,29 @@ class _HomeScreenState extends State<HomeScreen>
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                  ).then((_) { _checkProfileSet(); _loadTodayStats(); }); // 돌아왔을 때 재확인
+                  ).then((_) {
+                    _checkProfileSet();
+                    _loadTodayStats();
+                  }); // 돌아왔을 때 재확인
                 },
               ),
 
             if (!_isProfileSet) const SizedBox(height: 8),
 
-            _DrawerItem(icon: Icons.home_outlined, label: context.tr('홈'), onTap: () => Navigator.pop(context)),
+            _DrawerItem(
+              icon: Icons.home_outlined,
+              label: context.tr('홈'),
+              onTap: () => Navigator.pop(context),
+            ),
             _DrawerItem(
               icon: Icons.history_outlined,
               label: context.tr('분석 기록'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                );
               },
             ),
             _DrawerItem(
@@ -334,20 +416,32 @@ class _HomeScreenState extends State<HomeScreen>
               label: context.tr('내 프로필'),
               trailing: !_isProfileSet
                   ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.deepOrange.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(context.tr('미설정'), style: const TextStyle(color: Colors.deepOrange, fontSize: 11)),
-              )
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        context.tr('미설정'),
+                        style: const TextStyle(
+                          color: Colors.deepOrange,
+                          fontSize: 11,
+                        ),
+                      ),
+                    )
                   : null,
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                ).then((_) { _checkProfileSet(); _loadTodayStats(); });
+                ).then((_) {
+                  _checkProfileSet();
+                  _loadTodayStats();
+                });
               },
             ),
             _DrawerItem(
@@ -355,7 +449,10 @@ class _HomeScreenState extends State<HomeScreen>
               label: context.tr('설정'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
               },
             ),
           ],
@@ -368,17 +465,24 @@ class _HomeScreenState extends State<HomeScreen>
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image == null || !mounted) return;
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)),
+    );
     _loadTodayStats();
   }
 
   Future<void> _takePicture() async {
     final cam = controller;
-    if (cam == null || !cam.value.isInitialized || cam.value.isTakingPicture) return;
+    if (cam == null || !cam.value.isInitialized || cam.value.isTakingPicture)
+      return;
     try {
       final XFile image = await cam.takePicture();
       if (!mounted) return;
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)));
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ResultScreen(imagePath: image.path)),
+      );
       _loadTodayStats();
     } catch (e) {
       debugPrint('촬영 오류: $e');
@@ -390,8 +494,11 @@ class _HomeScreenState extends State<HomeScreen>
 
 class _ScanFrame extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      SizedBox(width: 260, height: 260, child: CustomPaint(painter: _FramePainter()));
+  Widget build(BuildContext context) => SizedBox(
+    width: 260,
+    height: 260,
+    child: CustomPaint(painter: _FramePainter()),
+  );
 }
 
 class _FramePainter extends CustomPainter {
@@ -408,19 +515,59 @@ class _FramePainter extends CustomPainter {
 
     canvas.drawLine(Offset(r, 0), Offset(len, 0), paint);
     canvas.drawLine(Offset(0, r), Offset(0, len), paint);
-    canvas.drawArc(const Rect.fromLTWH(0, 0, r * 2, r * 2), 3.14, 1.57, false, paint);
+    canvas.drawArc(
+      const Rect.fromLTWH(0, 0, r * 2, r * 2),
+      3.14,
+      1.57,
+      false,
+      paint,
+    );
 
-    canvas.drawLine(Offset(size.width - len, 0), Offset(size.width - r, 0), paint);
+    canvas.drawLine(
+      Offset(size.width - len, 0),
+      Offset(size.width - r, 0),
+      paint,
+    );
     canvas.drawLine(Offset(size.width, r), Offset(size.width, len), paint);
-    canvas.drawArc(Rect.fromLTWH(size.width - r * 2, 0, r * 2, r * 2), 4.71, 1.57, false, paint);
+    canvas.drawArc(
+      Rect.fromLTWH(size.width - r * 2, 0, r * 2, r * 2),
+      4.71,
+      1.57,
+      false,
+      paint,
+    );
 
-    canvas.drawLine(Offset(0, size.height - len), Offset(0, size.height - r), paint);
+    canvas.drawLine(
+      Offset(0, size.height - len),
+      Offset(0, size.height - r),
+      paint,
+    );
     canvas.drawLine(Offset(r, size.height), Offset(len, size.height), paint);
-    canvas.drawArc(Rect.fromLTWH(0, size.height - r * 2, r * 2, r * 2), 1.57, 1.57, false, paint);
+    canvas.drawArc(
+      Rect.fromLTWH(0, size.height - r * 2, r * 2, r * 2),
+      1.57,
+      1.57,
+      false,
+      paint,
+    );
 
-    canvas.drawLine(Offset(size.width, size.height - len), Offset(size.width, size.height - r), paint);
-    canvas.drawLine(Offset(size.width - len, size.height), Offset(size.width - r, size.height), paint);
-    canvas.drawArc(Rect.fromLTWH(size.width - r * 2, size.height - r * 2, r * 2, r * 2), 0, 1.57, false, paint);
+    canvas.drawLine(
+      Offset(size.width, size.height - len),
+      Offset(size.width, size.height - r),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width - len, size.height),
+      Offset(size.width - r, size.height),
+      paint,
+    );
+    canvas.drawArc(
+      Rect.fromLTWH(size.width - r * 2, size.height - r * 2, r * 2, r * 2),
+      0,
+      1.57,
+      false,
+      paint,
+    );
   }
 
   @override
@@ -436,13 +583,18 @@ class _GalleryButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 56, height: 56,
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white24, width: 1.5),
           color: Colors.white10,
         ),
-        child: const Icon(Icons.photo_library_outlined, color: Colors.white70, size: 24),
+        child: const Icon(
+          Icons.photo_library_outlined,
+          color: Colors.white70,
+          size: 24,
+        ),
       ),
     );
   }
@@ -457,7 +609,8 @@ class _ShutterButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 80, height: 80,
+        width: 80,
+        height: 80,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 3),
@@ -465,8 +618,12 @@ class _ShutterButton extends StatelessWidget {
         ),
         child: Center(
           child: Container(
-            width: 62, height: 62,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+            width: 62,
+            height: 62,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
           ),
         ),
       ),
@@ -494,17 +651,19 @@ class _TodayCalBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ratio = (tdee != null && tdee! > 0) ? (todayCalories / tdee!).clamp(0.0, 1.0) : null;
+    final ratio = (tdee != null && tdee! > 0)
+        ? (todayCalories / tdee!).clamp(0.0, 1.0)
+        : null;
     final remaining = tdee != null ? (tdee! - todayCalories).round() : null;
     final isOver = remaining != null && remaining < 0;
 
     final Color barColor = ratio == null
         ? Colors.white38
         : ratio < 0.5
-            ? Colors.green.shade400
-            : ratio < 0.85
-                ? Colors.orange.shade300
-                : Colors.red.shade300;
+        ? Colors.green.shade400
+        : ratio < 0.85
+        ? Colors.orange.shade300
+        : Colors.red.shade300;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
@@ -519,14 +678,29 @@ class _TodayCalBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.local_fire_department_outlined, color: Colors.deepOrange, size: 13),
+              const Icon(
+                Icons.local_fire_department_outlined,
+                color: Colors.deepOrange,
+                size: 13,
+              ),
               const SizedBox(width: 5),
-              Text(context.tr('오늘'), style: const TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 0.5)),
+              Text(
+                context.tr('오늘'),
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                ),
+              ),
               const Spacer(),
               if (ratio != null) ...[
                 Text(
                   '${(ratio * 100).toInt()}%',
-                  style: TextStyle(color: barColor, fontSize: 11, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: barColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(width: 6),
               ],
@@ -534,7 +708,11 @@ class _TodayCalBanner extends StatelessWidget {
                 tdee != null
                     ? '$todayCalories / ${tdee!.toStringAsFixed(0)} kcal'
                     : '$todayCalories kcal',
-                style: TextStyle(color: barColor, fontSize: 11, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: barColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -544,7 +722,10 @@ class _TodayCalBanner extends StatelessWidget {
               borderRadius: BorderRadius.circular(3),
               child: Stack(
                 children: [
-                  Container(height: 4, color: Colors.white.withValues(alpha: 0.1)),
+                  Container(
+                    height: 4,
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
                   FractionallySizedBox(
                     widthFactor: ratio,
                     child: Container(
@@ -573,11 +754,32 @@ class _TodayCalBanner extends StatelessWidget {
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _MacroMini(label: context.tr('탄'), value: carbs, goal: carbGoal!, color: Colors.blue.shade300)),
+                Expanded(
+                  child: _MacroMini(
+                    label: context.tr('탄'),
+                    value: carbs,
+                    goal: carbGoal!,
+                    color: Colors.blue.shade300,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _MacroMini(label: context.tr('단'), value: protein, goal: proteinGoal!, color: Colors.green.shade400)),
+                Expanded(
+                  child: _MacroMini(
+                    label: context.tr('단'),
+                    value: protein,
+                    goal: proteinGoal!,
+                    color: Colors.green.shade400,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _MacroMini(label: context.tr('지'), value: fat, goal: fatGoal!, color: Colors.orange.shade300)),
+                Expanded(
+                  child: _MacroMini(
+                    label: context.tr('지'),
+                    value: fat,
+                    goal: fatGoal!,
+                    color: Colors.orange.shade300,
+                  ),
+                ),
               ],
             ),
           ],
@@ -594,7 +796,12 @@ class _MacroMini extends StatelessWidget {
   final double value;
   final double goal;
   final Color color;
-  const _MacroMini({required this.label, required this.value, required this.goal, required this.color});
+  const _MacroMini({
+    required this.label,
+    required this.value,
+    required this.goal,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -604,10 +811,19 @@ class _MacroMini extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const Spacer(),
-            Text('${value.round()}/${goal.round()}g',
-                style: const TextStyle(color: Colors.white38, fontSize: 9)),
+            Text(
+              '${value.round()}/${goal.round()}g',
+              style: const TextStyle(color: Colors.white38, fontSize: 9),
+            ),
           ],
         ),
         const SizedBox(height: 3),
@@ -649,18 +865,30 @@ class _CameraPermissionDeniedView extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.no_photography_outlined, color: Colors.white30, size: 36),
+              child: const Icon(
+                Icons.no_photography_outlined,
+                color: Colors.white30,
+                size: 36,
+              ),
             ),
             const SizedBox(height: 28),
             Text(
               context.tr('카메라 권한이 필요해요'),
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               context.tr('음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'),
-              style: TextStyle(color: Colors.white38, fontSize: 14, height: 1.7),
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 14,
+                height: 1.7,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 36),
@@ -675,7 +903,11 @@ class _CameraPermissionDeniedView extends StatelessWidget {
                 ),
                 child: Text(
                   context.tr('설정으로 이동'),
-                  style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -710,8 +942,14 @@ class _DrawerItem extends StatelessWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
       leading: Icon(icon, color: Colors.white54, size: 22),
-      title: Text(label,
-          style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w400)),
+      title: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
       trailing: trailing,
       onTap: onTap,
     );

@@ -5,16 +5,16 @@ import '../models/food_analysis.dart';
 final ValueNotifier<Locale> appLocale = ValueNotifier(const Locale('ko'));
 
 Locale localeForLanguage(String? languageCode) => switch (languageCode) {
-      'en' => const Locale('en'),
-      'ja' => const Locale('ja'),
-      _ => const Locale('ko'),
-    };
+  'en' => const Locale('en'),
+  'ja' => const Locale('ja'),
+  _ => const Locale('ko'),
+};
 
 String languageCodeForName(String languageName) => switch (languageName) {
-      'English' => 'en',
-      '日本語' => 'ja',
-      _ => 'ko',
-    };
+  'English' => 'en',
+  '日本語' => 'ja',
+  _ => 'ko',
+};
 
 /// Translations for the settings flow. New screens can use the same helper as
 /// they are localized in follow-up passes.
@@ -32,18 +32,22 @@ extension AppStrings on BuildContext {
 
 extension LocalizedFoodAnalysis on FoodAnalysis {
   String localizedDisplayText(BuildContext context) => displayTextFor(
-        caloriesLabel: context.tr('칼로리'),
-        carbsLabel: context.tr('탄수화물'),
-        proteinLabel: context.tr('단백질'),
-        fatLabel: context.tr('지방'),
-        sodiumLabel: context.tr('나트륨'),
-        fiberLabel: context.tr('식이섬유'),
-        portionLabel: context.tr('먹은 양'),
-        servingUnit: context.tr('인분'),
-      );
+    caloriesLabel: context.tr('칼로리'),
+    carbsLabel: context.tr('탄수화물'),
+    proteinLabel: context.tr('단백질'),
+    fatLabel: context.tr('지방'),
+    sodiumLabel: context.tr('나트륨'),
+    fiberLabel: context.tr('식이섬유'),
+    portionLabel: context.tr('먹은 양'),
+    servingUnit: context.tr('인분'),
+  );
 }
 
 const _english = <String, String>{
+  'HISTORY': 'HISTORY',
+  'SETTINGS': 'SETTINGS',
+  'PROFILE': 'PROFILE',
+  'MY PROFILE': 'MY PROFILE',
   '음식을 프레임에 맞춰주세요': 'Place the food inside the frame',
   '분석 결과는 참고용입니다': 'Analysis results are estimates',
   'AI 음식 분석기': 'AI food analyzer',
@@ -59,19 +63,24 @@ const _english = <String, String>{
   '단': 'Protein',
   '지': 'Fat',
   '카메라 권한이 필요해요': 'Camera permission is required',
-  '음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.': 'Camera access is required to analyze food photos.\nPlease allow camera access in Settings.',
+  '음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.':
+      'Camera access is required to analyze food photos.\nPlease allow camera access in Settings.',
   '설정으로 이동': 'Open settings',
   '설정 → 개인 정보 보호 → 카메라': 'Settings → Privacy → Camera',
-  '프로필을 설정하면 칼로리 기준이 맞춤 설정돼요': 'Set up your profile for a personalized calorie goal',
+  '프로필을 설정하면 칼로리 기준이 맞춤 설정돼요':
+      'Set up your profile for a personalized calorie goal',
   '음식을 찍으면': 'Take a photo of your food',
   'AI가 바로 분석': 'AI analyzes it instantly',
-  '카메라나 갤러리 사진으로 음식 이름, 예상 칼로리, 주요 영양소를 확인해요.': 'Use a camera or gallery photo to see the food name, estimated calories, and key nutrients.',
+  '카메라나 갤러리 사진으로 음식 이름, 예상 칼로리, 주요 영양소를 확인해요.':
+      'Use a camera or gallery photo to see the food name, estimated calories, and key nutrients.',
   '내 기준에 맞춰': 'Make it personal',
   '하루 칼로리 관리': 'Track daily calories',
-  '키, 몸무게, 활동량을 입력하면 TDEE 기준으로 섭취량을 비교할 수 있어요.': 'Enter your height, weight, and activity level to compare intake with your TDEE.',
+  '키, 몸무게, 활동량을 입력하면 TDEE 기준으로 섭취량을 비교할 수 있어요.':
+      'Enter your height, weight, and activity level to compare intake with your TDEE.',
   '기록이 쌓이면': 'Build your history',
   '식습관이 보여요': 'See your eating habits',
-  '분석 기록과 주간 칼로리 흐름을 모아보고, 중요한 식사는 즐겨찾기로 남겨요.': 'Review your analyses and weekly calorie trends, and save important meals as favorites.',
+  '분석 기록과 주간 칼로리 흐름을 모아보고, 중요한 식사는 즐겨찾기로 남겨요.':
+      'Review your analyses and weekly calorie trends, and save important meals as favorites.',
   '내 정보 입력하고 시작': 'Enter my details',
   '다음': 'Next',
   '나중에 설정할게요': 'Set up later',
@@ -128,7 +137,8 @@ const _english = <String, String>{
   '인분': 'servings',
   '칼로리': 'Calories',
   'BiteLens 음식 분석 결과': 'BiteLens food analysis',
-  '입력한 정보를 기반으로 칼로리 분석 기준이 설정됩니다': 'Your calorie targets will be based on the details you enter',
+  '입력한 정보를 기반으로 칼로리 분석 기준이 설정됩니다':
+      'Your calorie targets will be based on the details you enter',
   '신체 정보': 'Body details',
   '성별': 'Gender',
   '나이': 'Age',
@@ -155,27 +165,37 @@ const _english = <String, String>{
   '밸런스': 'Balanced',
   '고단백': 'High protein',
   '저탄수': 'Low carb',
-  '* 해리스-베네딕트 공식 기반 추정치입니다. 개인차가 있을 수 있어요.': '* Estimated using the Harris-Benedict equation. Individual results may vary.',
-  '아무것도 하지 않아도\n심장 박동, 호흡, 체온 유지 등\n생명 활동에 소비되는 최소 칼로리예요.\n\n해리스-베네딕트 공식으로 계산되며\n성별·나이·키·몸무게를 기반으로 합니다.': 'Calories your body needs for basic functions like breathing and maintaining body temperature.\n\nEstimated with the Harris-Benedict equation using gender, age, height, and weight.',
-  '하루 동안 실제로 소비하는\n총 칼로리예요.\n\nBMR × 활동량 계수로 산출되며\n이 수치가 음식 분석 시\n칼로리 기준선으로 사용됩니다.': 'Your estimated total daily energy expenditure.\n\nCalculated from BMR and activity level, and used as the calorie reference for food analyses.',
-  'TDEE와 선택한 비율로 계산된 하루 목표량이에요': 'Daily targets calculated from your TDEE and selected ratio',
-  '신체 정보를 입력하면\nBMI와 기초대사량이 계산됩니다': 'Enter your body details to calculate BMI and basal metabolic rate',
+  '* 해리스-베네딕트 공식 기반 추정치입니다. 개인차가 있을 수 있어요.':
+      '* Estimated using the Harris-Benedict equation. Individual results may vary.',
+  '아무것도 하지 않아도\n심장 박동, 호흡, 체온 유지 등\n생명 활동에 소비되는 최소 칼로리예요.\n\n해리스-베네딕트 공식으로 계산되며\n성별·나이·키·몸무게를 기반으로 합니다.':
+      'Calories your body needs for basic functions like breathing and maintaining body temperature.\n\nEstimated with the Harris-Benedict equation using gender, age, height, and weight.',
+  '하루 동안 실제로 소비하는\n총 칼로리예요.\n\nBMR × 활동량 계수로 산출되며\n이 수치가 음식 분석 시\n칼로리 기준선으로 사용됩니다.':
+      'Your estimated total daily energy expenditure.\n\nCalculated from BMR and activity level, and used as the calorie reference for food analyses.',
+  'TDEE와 선택한 비율로 계산된 하루 목표량이에요':
+      'Daily targets calculated from your TDEE and selected ratio',
+  '신체 정보를 입력하면\nBMI와 기초대사량이 계산됩니다':
+      'Enter your body details to calculate BMI and basal metabolic rate',
   '몸무게 기록': 'Weight history',
   '오늘 몸무게 입력 (kg)': 'Enter today’s weight (kg)',
   '기록': 'Log weight',
-  '기록을 추가하면 추이 그래프가 표시됩니다': 'Your trend chart will appear after you add records',
+  '기록을 추가하면 추이 그래프가 표시됩니다':
+      'Your trend chart will appear after you add records',
   '2개 이상 기록 시 그래프가 표시됩니다': 'Add at least two entries to show the chart',
   '인터넷 연결을 확인해주세요.': 'Check your internet connection.',
-  '이미지를 읽을 수 없습니다. 다른 사진을 사용해주세요.': 'Unable to read the image. Please try another photo.',
+  '이미지를 읽을 수 없습니다. 다른 사진을 사용해주세요.':
+      'Unable to read the image. Please try another photo.',
   '네트워크 연결을 확인해주세요.': 'Check your network connection.',
   '분석 시간이 초과되었습니다. 다시 시도해주세요.': 'The analysis timed out. Please try again.',
   '분석 중 오류가 발생했습니다.': 'An error occurred during analysis.',
   '분석 결과를 받지 못했습니다.': 'No analysis result was received.',
-  '앱 인증에 실패했습니다. 앱을 재시작해주세요.': 'App verification failed. Please restart the app.',
-  '서버가 혼잡합니다. 잠시 후 다시 시도해주세요.': 'The service is busy. Please try again shortly.',
+  '앱 인증에 실패했습니다. 앱을 재시작해주세요.':
+      'App verification failed. Please restart the app.',
+  '서버가 혼잡합니다. 잠시 후 다시 시도해주세요.':
+      'The service is busy. Please try again shortly.',
   '분석에 실패했습니다.': 'Analysis failed.',
   'AI 분석 중...': 'Analyzing with AI...',
-  'AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.': 'AI analysis is an estimate. Actual calories and nutrients vary with food type, portion, and preparation.',
+  'AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.':
+      'AI analysis is an estimate. Actual calories and nutrients vary with food type, portion, and preparation.',
   '다른 사진 선택': 'Choose another photo',
   '다시 찍기': 'Take another photo',
   '분석을 완료하지 못했어요': 'Analysis could not be completed',
@@ -202,7 +222,8 @@ const _english = <String, String>{
   '분석 기록을 CSV 파일로 공유': 'Share analysis history as a CSV file',
   '분석 기록 전체 삭제': 'Delete all analysis history',
   '앱 데이터 전체 삭제': 'Delete all app data',
-  '프로필, 체중 기록, 분석 기록, 설정을 모두 삭제': 'Delete profile, weight and analysis history, and settings',
+  '프로필, 체중 기록, 분석 기록, 설정을 모두 삭제':
+      'Delete profile, weight and analysis history, and settings',
   '앱 정보': 'About',
   '개인정보 처리방침': 'Privacy policy',
   '링크를 준비 중이에요': 'Link is not available yet',
@@ -212,16 +233,22 @@ const _english = <String, String>{
   'BiteLens 분석 기록': 'BiteLens analysis history',
   '내보내기 중 오류가 발생했습니다.': 'An error occurred while exporting.',
   '기록 전체 삭제': 'Delete all history',
-  '모든 분석 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없어요.': 'All analysis history will be deleted.\nThis action cannot be undone.',
+  '모든 분석 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없어요.':
+      'All analysis history will be deleted.\nThis action cannot be undone.',
   '취소': 'Cancel',
   '삭제': 'Delete',
-  '분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.': 'Analysis photos and history, weight history, profile, and app settings will be deleted.\nThis action cannot be undone.',
+  '분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.':
+      'Analysis photos and history, weight history, profile, and app settings will be deleted.\nThis action cannot be undone.',
   '모든 앱 데이터를 삭제했어요.': 'All app data has been deleted.',
   '모두 삭제': 'Delete all',
   'Version': 'Version',
 };
 
 const _japanese = <String, String>{
+  'HISTORY': '分析履歴',
+  'SETTINGS': '設定',
+  'PROFILE': 'プロフィール',
+  'MY PROFILE': 'プロフィール',
   '음식을 프레임에 맞춰주세요': '食べ物をフレームに合わせてください',
   '분석 결과는 참고용입니다': '分析結果は目安です',
   'AI 음식 분석기': 'AI 食品分析',
@@ -237,19 +264,23 @@ const _japanese = <String, String>{
   '단': 'たんぱく質',
   '지': '脂質',
   '카메라 권한이 필요해요': 'カメラへのアクセスが必要です',
-  '음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.': '食べ物の写真を分析するにはカメラへのアクセスが必要です。\n設定でカメラへのアクセスを許可してください。',
+  '음식 사진을 분석하려면\n카메라 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.':
+      '食べ物の写真を分析するにはカメラへのアクセスが必要です。\n設定でカメラへのアクセスを許可してください。',
   '설정으로 이동': '設定を開く',
   '설정 → 개인 정보 보호 → 카메라': '設定 → プライバシー → カメラ',
   '프로필을 설정하면 칼로리 기준이 맞춤 설정돼요': 'プロフィールを設定するとカロリー目標を調整できます',
   '음식을 찍으면': '食べ物を撮影すると',
   'AI가 바로 분석': 'AIがすぐに分析',
-  '카메라나 갤러리 사진으로 음식 이름, 예상 칼로리, 주요 영양소를 확인해요.': 'カメラやギャラリーの写真から食品名、推定カロリー、主な栄養素を確認できます。',
+  '카메라나 갤러리 사진으로 음식 이름, 예상 칼로리, 주요 영양소를 확인해요.':
+      'カメラやギャラリーの写真から食品名、推定カロリー、主な栄養素を確認できます。',
   '내 기준에 맞춰': '自分に合わせて',
   '하루 칼로리 관리': '1日のカロリーを管理',
-  '키, 몸무게, 활동량을 입력하면 TDEE 기준으로 섭취량을 비교할 수 있어요.': '身長、体重、活動量を入力すると、TDEEを基準に摂取量を比較できます。',
+  '키, 몸무게, 활동량을 입력하면 TDEE 기준으로 섭취량을 비교할 수 있어요.':
+      '身長、体重、活動量を入力すると、TDEEを基準に摂取量を比較できます。',
   '기록이 쌓이면': '記録を続けると',
   '식습관이 보여요': '食習慣が見えてきます',
-  '분석 기록과 주간 칼로리 흐름을 모아보고, 중요한 식사는 즐겨찾기로 남겨요.': '分析履歴や週ごとのカロリー推移を確認し、大切な食事をお気に入りに保存できます。',
+  '분석 기록과 주간 칼로리 흐름을 모아보고, 중요한 식사는 즐겨찾기로 남겨요.':
+      '分析履歴や週ごとのカロリー推移を確認し、大切な食事をお気に入りに保存できます。',
   '내 정보 입력하고 시작': 'プロフィールを入力して開始',
   '다음': '次へ',
   '나중에 설정할게요': '後で設定する',
@@ -334,8 +365,10 @@ const _japanese = <String, String>{
   '고단백': '高たんぱく',
   '저탄수': '低糖質',
   '* 해리스-베네딕트 공식 기반 추정치입니다. 개인차가 있을 수 있어요.': '* ハリス・ベネディクト式による推定値です。個人差があります。',
-  '아무것도 하지 않아도\n심장 박동, 호흡, 체온 유지 등\n생명 활동에 소비되는 최소 칼로리예요.\n\n해리스-베네딕트 공식으로 계산되며\n성별·나이·키·몸무게를 기반으로 합니다.': '呼吸や体温維持など、基本的な生命活動に必要なカロリーです。\n\n性別、年齢、身長、体重を用いてハリス・ベネディクト式で推定します。',
-  '하루 동안 실제로 소비하는\n총 칼로리예요.\n\nBMR × 활동량 계수로 산출되며\n이 수치가 음식 분석 시\n칼로리 기준선으로 사용됩니다.': '1日に消費する総カロリーの推定値です。\n\nBMRと活動量から算出し、食品分析のカロリー基準として使用します。',
+  '아무것도 하지 않아도\n심장 박동, 호흡, 체온 유지 등\n생명 활동에 소비되는 최소 칼로리예요.\n\n해리스-베네딕트 공식으로 계산되며\n성별·나이·키·몸무게를 기반으로 합니다.':
+      '呼吸や体温維持など、基本的な生命活動に必要なカロリーです。\n\n性別、年齢、身長、体重を用いてハリス・ベネディクト式で推定します。',
+  '하루 동안 실제로 소비하는\n총 칼로리예요.\n\nBMR × 활동량 계수로 산출되며\n이 수치가 음식 분석 시\n칼로리 기준선으로 사용됩니다.':
+      '1日に消費する総カロリーの推定値です。\n\nBMRと活動量から算出し、食品分析のカロリー基準として使用します。',
   'TDEE와 선택한 비율로 계산된 하루 목표량이에요': 'TDEEと選択した比率から計算した1日の目標量です',
   '신체 정보를 입력하면\nBMI와 기초대사량이 계산됩니다': '身体情報を入力するとBMIと基礎代謝量を計算します',
   '몸무게 기록': '体重記録',
@@ -353,7 +386,8 @@ const _japanese = <String, String>{
   '서버가 혼잡합니다. 잠시 후 다시 시도해주세요.': 'サービスが混み合っています。しばらくしてから再試行してください。',
   '분석에 실패했습니다.': '分析に失敗しました。',
   'AI 분석 중...': 'AIで分析中...',
-  'AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.': 'AIの分析は目安です。実際のカロリーや栄養素は食品の種類、量、調理方法によって異なります。',
+  'AI 분석 결과는 참고용이며, 음식의 종류·양·조리법에 따라 실제 칼로리와 영양소는 다를 수 있습니다.':
+      'AIの分析は目安です。実際のカロリーや栄養素は食品の種類、量、調理方法によって異なります。',
   '다른 사진 선택': '別の写真を選択',
   '다시 찍기': 'もう一度撮影',
   '분석을 완료하지 못했어요': '分析を完了できませんでした',
@@ -393,7 +427,8 @@ const _japanese = <String, String>{
   '모든 분석 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없어요.': 'すべての分析履歴が削除されます。\nこの操作は取り消せません。',
   '취소': 'キャンセル',
   '삭제': '削除',
-  '분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.': '分析写真と履歴、体重履歴、プロフィール、アプリ設定がすべて削除されます。\nこの操作は取り消せません。',
+  '분석 사진과 기록, 체중 기록, 프로필, 앱 설정이 모두 삭제됩니다.\n이 작업은 되돌릴 수 없어요.':
+      '分析写真と履歴、体重履歴、プロフィール、アプリ設定がすべて削除されます。\nこの操作は取り消せません。',
   '모든 앱 데이터를 삭제했어요.': 'すべてのアプリデータを削除しました。',
   '모두 삭제': 'すべて削除',
   'Version': 'バージョン',
