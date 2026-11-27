@@ -7,9 +7,12 @@ import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
-  static Database? _database;
+  Database? _database;
 
   DatabaseHelper._init();
+
+  /// 테스트에서 메모리 SQLite를 주입할 때 사용한다.
+  DatabaseHelper.forTesting(Database database) : _database = database;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
