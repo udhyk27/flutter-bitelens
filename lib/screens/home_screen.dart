@@ -474,8 +474,9 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _takePicture() async {
     final cam = controller;
-    if (cam == null || !cam.value.isInitialized || cam.value.isTakingPicture)
+    if (cam == null || !cam.value.isInitialized || cam.value.isTakingPicture) {
       return;
+    }
     try {
       final XFile image = await cam.takePicture();
       if (!mounted) return;

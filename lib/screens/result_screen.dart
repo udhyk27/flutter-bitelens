@@ -1309,8 +1309,9 @@ class _NutritionCard extends StatelessWidget {
     final fat = analysis.fat ?? 0;
     final total = carbs + protein + fat;
 
-    if (carbsStr == '-' && proteinStr == '-' && fatStr == '-')
+    if (carbsStr == '-' && proteinStr == '-' && fatStr == '-') {
       return const SizedBox.shrink();
+    }
 
     return Container(
       width: double.infinity,

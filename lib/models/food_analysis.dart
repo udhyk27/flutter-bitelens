@@ -77,16 +77,19 @@ class FoodAnalysis {
       b.writeln('$caloriesLabel: $caloriesText');
     }
     final macros = <String>[];
-    if (carbsText != null && carbsText != '-')
+    if (carbsText != null && carbsText != '-') {
       macros.add('$carbsLabel $carbsText');
+    }
     if (proteinText != null && proteinText != '-') {
       macros.add('$proteinLabel $proteinText');
     }
     if (fatText != null && fatText != '-') macros.add('$fatLabel $fatText');
-    if (sodiumText != null && sodiumText != '-')
+    if (sodiumText != null && sodiumText != '-') {
       macros.add('$sodiumLabel $sodiumText');
-    if (fiberText != null && fiberText != '-')
+    }
+    if (fiberText != null && fiberText != '-') {
       macros.add('$fiberLabel $fiberText');
+    }
     if (macros.isNotEmpty) b.writeln(macros.join(' · '));
     if (portion != 1.0) {
       final separator = servingUnit == '인분' || servingUnit == '人前' ? '' : ' ';

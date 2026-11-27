@@ -101,8 +101,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await prefs.setString('macro_ratio', _selectedMacroPreset);
     if (_tdee != null) await prefs.setDouble('tdee', _tdee!);
     if (_carbGoal != null) await prefs.setDouble('carb_goal', _carbGoal!);
-    if (_proteinGoal != null)
+    if (_proteinGoal != null) {
       await prefs.setDouble('protein_goal', _proteinGoal!);
+    }
     if (_fatGoal != null) await prefs.setDouble('fat_goal', _fatGoal!);
   }
 
